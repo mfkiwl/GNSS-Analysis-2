@@ -7,38 +7,41 @@ Created on Tue Aug  9 10:24:16 2022
 
 import georinex as gr
 import pandas as pd
+import numpy as np
+
+def join_orbits_with_receiver(receiver_path: str, 
+                              orbital_path: str, 
+                              save: bool = False, 
+                              useindicators: bool = True) -> pd.DataFrame:
+    
+    y = gr.load(receiver_path, useindicators = useindicators).to_dataframe()
+   
+
+    x = gr.load(orbital_path).to_dataframe()
+        
+    df = x.join(y.reindex(y.index, level = 0))
+    
+    if useindicators:
+        slip_cols = [elem for elem in list(df.columns)
+                     if ("ssi" in elem) or ("lli" in elem)]
 
 
-class load_orbits(object):
-    
-    def __init__(self, infile, filename, prn = "G05"):
-        
-        
-        ob = gr.load(infile + filename).to_dataframe()
-        
-        self.ob = ob.loc[ob.index.get_level_values("sv") == prn, :]
-    
-    
-    def position(self, pos = "x"):
-        position = self.ob.loc[self.ob.index.get_level_values("ECEF") == pos, 
-                               ["position"]]
-        position.index = pd.to_datetime(position.index.get_level_values(0))
-        return position
-    
+    for col in slip_cols:
+        df.replace({col: {np.nan: 0}}, inplace = True)
 
-class load_receiver(object):
+    df = df.dropna()
     
-    def __init__(self, infile, filename, prn = "G05"):
-        
-        self.obs = gr.load(infile + filename)
-        rx = self.obs.to_dataframe()
+    if save:
+        df.to_csv("Database/process.txt", sep = " ", index = True)
     
-    @property
-    def position(self):
-        return self.obs.position
+    return df
+
+
+receiver_path = "Database/alar0011/alar0011.14o"
+orbital_path = "Database/jpl17733.sp3/igr17733.sp3"
+
+df = join_orbits_with_receiver(receiver_path, 
+                              orbital_path, save = True)
+
+df
     
-        #rx = rx.dropna()
-    
-        #rx = rx.loc[rx.index.get_level_values("sv") == prn, :]
-    
-        #rx.index = pd.to_datetime(rx.index.get_level_values("time"))
