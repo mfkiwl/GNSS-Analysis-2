@@ -37,11 +37,76 @@ def join_orbits_with_receiver(receiver_path: str,
     return df
 
 
-receiver_path = "Database/alar0011/alar0011.14o"
-orbital_path = "Database/jpl17733.sp3/igr17733.sp3"
+def find_header(infile:str, 
+                filename: str, 
+                header: str = 'yyyy.MM.dd') -> tuple:
 
-df = join_orbits_with_receiver(receiver_path, 
-                              orbital_path, save = True)
+    """Function for find the header and the data body"""
 
-df
+    with open(infile + filename) as f:
+        data = [line.strip() for line in f.readlines()]
+
+    count = 0
+    for num in range(len(data)):
+        if (header) in data[num]:
+            break
+        else:
+            count += 1
+
+
+    data_ = data[count + 2: - 3]
+
+
+    header_ = data[count + 1].split(" ")
+
+    return (header_, data_)
+
+    
+    
+infile = "Database/CAS0MGXRAP_20140010000_01D_01D_DCB.BSX/"
+filename = "CAS0MGXRAP_20140010000_01D_01D_DCB.BSX"
+
+def read_dcb(infile, filename):
+
+    header, data = find_header(infile,
+                filename, 
+                header = '+BIAS/SOLUTION')
+
+
+
+    def _extract_elements(dat):
+        BIAS = dat[:5].strip()
+        version = dat[5:9].strip()
+        file_agency = dat[9:13].strip()
+        creation_time = dat[13:18].strip()
+        code = dat[18: 28].strip()
+
+        return [BIAS, version, file_agency, creation_time, code] + dat[28:].split()
+
+
+    str_data =  [_extract_elements(num) for num in data]
+
+    names = ["bias", "svn", "prn", "site", 
+            "domes", "obs1", "obs2", "b_start", 
+            "b_end", "unit", "value", "std"]
+
+
+    df = pd.DataFrame(str_data, columns = names)
+
+    df[["value", "std"]] = df[["value", "std"]].apply(pd.to_numeric, 
+                                                      errors='coerce')
+
+    return df
+
+
+
+
+def main():
+    receiver_path = "Database/alar0011/alar0011.14o"
+    orbital_path = "Database/jpl17733.sp3/igr17733.sp3"
+    
+    df = join_orbits_with_receiver(receiver_path, 
+                                  orbital_path, save = True)
+    
+    df
     
