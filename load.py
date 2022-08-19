@@ -46,7 +46,17 @@ def join_orbits_with_receiver(receiver_path: str,
 
 
     if save:
-        df.to_csv("Database/process.txt", sep = " ", index = True)
+        
+        
+        time_system = obs.attrs["time_system"]
+        station = obs.attrs["filename"][:4].upper()
+        date = orbits.index.get_level_values('time')[0]
+        date = str(date.date()).replace("-", "")
+        
+        FigureName = f"{station}_{time_system}_{date}"
+        
+        df.to_csv(f"Database/{FigureName}.txt", sep = " ", index = True)
+
         
     return df
 
