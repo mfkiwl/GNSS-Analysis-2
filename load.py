@@ -14,26 +14,40 @@ def join_orbits_with_receiver(receiver_path: str,
                               save: bool = False, 
                               useindicators: bool = True) -> pd.DataFrame:
     
-    y = gr.load(receiver_path, useindicators = useindicators).to_dataframe()
-   
-
-    x = gr.load(orbital_path).to_dataframe()
-        
-    df = x.join(y.reindex(y.index, level = 0))
     
-    if useindicators:
-        slip_cols = [elem for elem in list(df.columns)
-                     if ("ssi" in elem) or ("lli" in elem)]
 
 
-    for col in slip_cols:
-        df.replace({col: {np.nan: 0}}, inplace = True)
+    obs = gr.load(receiver_path, useindicators = True)
+    
+    rinex = obs.to_dataframe()
+
+    for col in ["P2ssi", "P1ssi", "C1ssi", "L1ssi", "L2ssi"]:
+        try: 
+            rinex.drop(columns = col, inplace = True)
+
+        except:
+            continue
+
+    rinex = rinex.dropna(subset = ["L1", "L2", "C1", "P2"])
+
+    for col in ["L1lli", "L2lli"]:
+        rinex.replace({col: {np.nan: 0}}, inplace = True)
+
+    
+
+    orbits = gr.load(orbital_path).to_dataframe()
+
+
+    orbits.drop(columns = ["clock", "dclock"], inplace = True)
+
+    df = orbits.join(rinex.reindex(rinex.index, level = 1))
 
     df = df.dropna()
-    
+
+
     if save:
         df.to_csv("Database/process.txt", sep = " ", index = True)
-    
+        
     return df
 
 
