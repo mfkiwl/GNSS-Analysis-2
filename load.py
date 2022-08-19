@@ -9,56 +9,66 @@ import georinex as gr
 import pandas as pd
 import numpy as np
 
-def join_orbits_with_receiver(receiver_path: str, 
-                              orbital_path: str, 
-                              save: bool = False, 
-                              useindicators: bool = True) -> pd.DataFrame:
-    
-    
+def load_receiver(receiver_path, prn = None):
 
+    obs = gr.load(receiver_path, 
+                  useindicators = True)
 
-    obs = gr.load(receiver_path, useindicators = True)
-    
-    rinex = obs.to_dataframe()
+    if prn == None:
+        df = obs.to_dataframe()
 
-    for col in ["P2ssi", "P1ssi", "C1ssi", "L1ssi", "L2ssi"]:
-        try: 
-            rinex.drop(columns = col, inplace = True)
+    else:
+        df = obs.sel(sv = prn).to_dataframe()
 
-        except:
-            continue
+    try:
+        df = df.drop(columns = ["P1", "P2ssi", "P1ssi",
+                                "C1ssi", "L1ssi", "L2ssi"])
 
-    rinex = rinex.dropna(subset = ["L1", "L2", "C1", "P2"])
+    except:
+        df = df.drop(columns = ["P2ssi", "C1ssi",
+                                "L1ssi", "L2ssi"])
+
+    df = df.dropna(subset = ["L1", "L2", "C1", "P2"])
 
     for col in ["L1lli", "L2lli"]:
-        rinex.replace({col: {np.nan: 0}}, inplace = True)
+        df.replace({col: {np.nan: 0}}, inplace = True)
 
+    return df
+
+def load_orbits(orbital_path, prn = None):
+
+    orbits = gr.load(orbital_path)
+
+    if prn == None:
+        orbits = orbits.to_dataframe()
+    else:
+        orbits = orbits.sel(sv = prn).to_dataframe()
+
+    orbits.drop(columns = ["clock", "dclock", "velocity"], inplace = True)
+
+    return orbits
     
+    
+def join(receiver_path, orbital_path, first = "orbit"):
+     
+    rinex = load_receiver(receiver_path)
+    orbit = load_orbits(orbital_path)
 
-    orbits = gr.load(orbital_path).to_dataframe()
+    if first == "rinex":
+        return rinex.join(orbit.reindex(orbit.index, level = 1))
 
+    else:
+        return orbit.join(rinex.reindex(rinex.index, level = 1))
 
-    orbits.drop(columns = ["clock", "dclock"], inplace = True)
-
-    df = orbits.join(rinex.reindex(rinex.index, level = 1))
-
-    df = df.dropna()
-
-
-    if save:
-        
-        
+def save():
         time_system = obs.attrs["time_system"]
         station = obs.attrs["filename"][:4].upper()
         date = orbits.index.get_level_values('time')[0]
         date = str(date.date()).replace("-", "")
         
-        FigureName = f"{station}_{time_system}_{date}"
+        Filename = f"{station}_{time_system}_{date}"
         
-        df.to_csv(f"Database/{FigureName}.txt", sep = " ", index = True)
-
-        
-    return df
+        df.to_csv(f"Database/{Filename}.txt", sep = " ", index = True)
 
 
 def find_header(infile:str, 
