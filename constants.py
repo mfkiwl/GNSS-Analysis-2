@@ -1,38 +1,64 @@
+"""
+Created on Wed Aug 10 15:29:00 2022
 
+@author: Luiz
+
+"""
 
 class constants(object):
     
-    def __init__(self, l1, l2, c1, p2):
+    """Contants used in the GNSS routines"""
+    
+    # Fundamental constants
+    F1 = 1575.42e6 
+    
+    F2 = 1227.60e6
+    c = 299792458.0
+    
+    
+    TECU = 1.0e16 
+    A = 40.3  
+    
+    DIFF_TEC_MAX = 0.05
+    pmean = 0.0
+    pdev = DIFF_TEC_MAX * 4.0
+    
+    
+    # Geodesic constants
+    alt_bottom = 6620.0
+    alt_top = 6870.0
+
+    radius_earth = 6371.0  
+    avg_heigth = 250.0 
+    
+    factor_1 = (F1 - F2) / (F1 + F2) / c
+    factor_2 = (F1 * F2) / (F2 - F1) / c
+    
+    TEC = ((F1 * F2) ** 2) / (F1 +F2) / (F1 - F2) / A / TECU
+        
+   
+
+class factors(object):
+    
+    
+        
+    def __init__(self, 
+                 l1 = None, 
+                 l2 = None, 
+                 c1 = None, 
+                 p2 = None):
+        
+        
         self.l1 = l1
         self.l2 = l2
         self.c1 = c1
         self.p2 = p2
         
-        # Fundamental constants
-        self.F1 = 1575.42e6 
-        self.F2 = 1227.60e6
-        self.c = 299792458.0
+        const = constants()
+     
         
-        
-        self.TECU = 1.0e16 
-        self.A = 40.3  
-        
-        self.DIFF_TEC_MAX = 0.05
-        self.pmean = 0.0
-        self.pdev = self.DIFF_TEC_MAX * 4.0
-        
-        
-        # Geodesic constants
-        self.alt_bottom = 6620.0
-        self.alt_top = 6870.0
-    
-        self.radius_earth = 6371.0  
-        self.avg_heigth = 250.0 
-        
-        self.factor_1 = (self.F1 - self.F2) / (self.F1 + self.F2) / self.c
-        self.factor_2 = (self.F1 * self.F2) / (self.F2 - self.F1) / self.c 
-        
-        
-        # Arrays com os nan's
-        self.rtec_nan = ((self.l1 / self.F1) - (self.l2 / self.F2)) * self.c  
-        self.mwlc_nan = (self.l1 - self.l2) - (self.F1 * self.c1 + self.F2 * self.p2) * self.factor_1
+           
+     
+
+
+#print(const.F1)
