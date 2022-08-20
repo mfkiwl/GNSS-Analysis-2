@@ -31,10 +31,12 @@ class constants(object):
     radius_earth = 6371.0  
     avg_heigth = 250.0 
     
-    factor_1 = (F1 - F2) / (F1 + F2) / c
-    factor_2 = (F1 * F2) / (F2 - F1) / c
+    factor = (F1 - F2) / (F1 + F2) / c
+    factor_mw = (F1 * F2) / (F2 - F1) / c
     
-    TEC = ((F1 * F2) ** 2) / (F1 +F2) / (F1 - F2) / A / TECU
+    
+    
+    factor_TEC = ((F1 * F2) ** 2) / (F1 + F2) / (F1 - F2) / A / TECU
         
    
 
