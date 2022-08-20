@@ -31,18 +31,18 @@ class constants(object):
     radius_earth = 6371.0  
     avg_heigth = 250.0 
     
+
+    dtor = 0.0174533
+    
     factor = (F1 - F2) / (F1 + F2) / c
+    
     factor_mw = (F1 * F2) / (F2 - F1) / c
-    
-    
     
     factor_TEC = ((F1 * F2) ** 2) / (F1 + F2) / (F1 - F2) / A / TECU
         
    
-
+"""
 class factors(object):
-    
-    
         
     def __init__(self, 
                  l1 = None, 
@@ -58,6 +58,9 @@ class factors(object):
         
         const = constants()
      
+
+"""
+
         
            
      
