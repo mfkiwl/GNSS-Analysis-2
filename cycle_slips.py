@@ -1,31 +1,6 @@
 from constants import *
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import datetime
+from main import *
 
-
-class observables(object):
-    
-    def __init__(self, df, prn = None):
-        
-        self.df = df 
-        self.prns = np.unique(self.df.index.get_level_values('sv').values)
-        
-        if prn is not None:
-            obs = self.df.loc[self.df.index.get_level_values('sv') == prn, :]
-        else:
-            obs = self.df
-    
-        self.l1 = obs.L1.values
-        self.l2 = obs.L2.values
-        self.c1 = obs.C1.values
-        self.p2 = obs.P2.values
-        
-        self.l1lli = obs.L1lli.values.astype(int)
-        self.l2lli = obs.L2lli.values.astype(int)
-        
-        self.time = pd.to_datetime(obs.index.get_level_values('time'))
         
         
 def correct_phases(RTEC, MWLC, 
@@ -138,3 +113,36 @@ def cycle_slip_corrector(time, l1_values, l2_values,
 
             
     return l1_values, l2_values, RTEC
+
+
+
+def main():
+    
+    filename = "alar0011.14o"
+
+    df = pd.read_csv(f"Database/{filename}.txt", 
+                     delim_whitespace=(True), 
+                     index_col = ["sv", "time"])
+
+
+
+    ob = observables(df, prn = "G01")
+
+
+    # phases carriers
+    l1_values = ob.l1
+    l2_values = ob.l2
+
+    # Loss Lock Indicator
+    l1lli_values, l2lli_values = ob.l1lli, ob.l2lli
+
+    # Pseudoranges
+    c1_values, p2_values = ob.c1, ob.p2
+
+    # time
+    time = ob.time
+    
+    
+    l1, l2, rtec = cycle_slip_corrector(time, l1_values, l2_values, 
+                                        c1_values, p2_values, 
+                                        l1lli_values, l2lli_values)
