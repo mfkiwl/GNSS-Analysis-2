@@ -13,6 +13,8 @@ def relative_tec(time, c1, p2, rtec):
     
     narc = 1
     index_last = 0
+    const = constants()
+
         
     a1 = p2[0] - c1[0]
     b = rtec[0] - a1
@@ -59,7 +61,6 @@ def main():
     prn = "G01"
     ob = observables(df, prn = prn)
 
-
     # phases carriers
     l1_values = ob.l1
     l2_values = ob.l2
@@ -73,14 +74,17 @@ def main():
     # time
     time = ob.time
 
-    const = constants()
-
+    
 
     l1, l2, rtec = cycle_slip_corrector(time, l1_values, l2_values, 
                                         c1_values, p2_values, 
                                         l1lli_values, l2lli_values)
     
     
-    rtec = relative_tec(time, c1, p2, rtec)
+    rtec = relative_tec(time, c1_values, 
+                        p2_values, rtec)
    
     plt.plot(time, rtec)
+    
+    
+main()
