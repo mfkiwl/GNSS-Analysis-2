@@ -1,250 +1,140 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Aug 10 15:29:00 2022
-
-@author: Luiz
-"""
-
-import datetime
-import numpy as np
-import pandas as pd
+from constants import constants as const
 from pyproj import Transformer, CRS
-from load import load_orbits, load_receiver
+import numpy as np
 
-
-def sub_ion_point(altiono, 
-                  sat_x, sat_y, sat_z, 
-                  obs_x, obs_y, obs_z):
-    
-    """sub-Ionospheric point"""
-    
-    alpha = sat_y - obs_y
-    phi = sat_x * obs_y - sat_y * obs_x
-    beta = sat_z - obs_z
-    theta = sat_x * obs_z - sat_z * obs_x
-    gamma = sat_x - obs_x
-
-    arg_1 = np.power((alpha * phi + beta * theta), 2.0)
-    
-    arg_2 = (np.power(alpha, 2.0) + 
-             np.power(beta, 2.0) + 
-             np.power(gamma, 2.0))
-    
-    arg_3 = (np.power(phi, 2.0) + 
-             np.power(theta, 2.0) - 
-             np.power(gamma, 2.0) * 
-             np.power(altiono, 2.0))
-    
-    fator = np.sqrt(arg_1 - arg_2 * arg_3)
-
-    arg_4 = (np.power(alpha, 2.0) + np.power(beta, 2.0) + np.power(gamma, 2.0))
-    
-    
-    dum = (-1 * (alpha * phi + beta * theta) - fator) / arg_4
-
-    aux_dum = (sat_x - dum) * (obs_x - dum)
-
-    for i, item in enumerate(aux_dum):
-        if item > 0:
-            dum[i] = (-1 * (alpha[i] * phi[i] + beta[i] * 
-                            theta[i]) + fator[i]) / (
-                            np.power(alpha[i], 2.0) + 
-                            np.power(beta[i], 2.0) + 
-                            np.power(gamma[i], 2.0))
-
-    sub_ion_x = dum
-    sub_ion_y = (alpha * dum + phi) / gamma
-    sub_ion_z = (beta * dum + theta) / gamma
-
-    return sub_ion_x, sub_ion_y, sub_ion_z
-
-
-def directions(sat_x, sat_y, sat_z, 
-               obs_x, obs_y, obs_z, 
-               long_obs, lat_obs):
-    
-    
-    dx = (sat_x - obs_x)
-    dy = (sat_y - obs_y)
-    dz = (sat_z - obs_z)
-
-    north = (-np.cos(long_obs) * np.sin(lat_obs) * dx - 
-              np.sin(long_obs) * np.sin(lat_obs) * dy + 
-              np.cos(lat_obs) * dz)
-    
-    east = - np.sin(long_obs) * dx + np.cos(long_obs) * dy
-
-    vertical = (np.cos(long_obs) * np.cos(lat_obs) * dx + 
-                np.sin(long_obs) * np.cos(lat_obs) * dy + 
-                np.sin(lat_obs) * dz)
-
-    return north, east, vertical
-
-
-def vertical_angle(sat_x, sat_y, sat_z, 
-                   obs_x, obs_y, obs_z, 
-                   long_obs, lat_obs, vertical):
-    
-    
-    v1 = np.power(np.cos(long_obs) * np.cos(lat_obs), 2.0)
-    v2 = np.power(np.sin(long_obs) * np.cos(lat_obs), 2.0)
-    v3 = np.power(np.sin(lat_obs), 2.0)
-    
-    vertical_norm = np.sqrt(v1 + v2 + v3)
-    
-    r = np.sqrt(np.power(sat_x - obs_x, 2.0) + 
-               np.power(sat_y - obs_y, 2.0) + 
-               np.power(sat_z - obs_z, 2.0))
-
-    return np.arccos(vertical / (r * vertical_norm))
-
-def elevation_and_azimuth(zangl, dtor, east, north):
-    elevation = ((np.pi / 2.0) - zangl) / dtor
-    azimuth = np.arctan2(east, north)
-    azimuth[azimuth < 0] += 2.0 * np.pi
-    azimuth = azimuth / dtor
-    return elevation, azimuth
-
-
-def zangle_in_ionosphere(elevation, dtor, 
-                         radius_earth, avg_heigth):
-
-    return ((np.pi / 2.0) - (elevation * dtor) - 
-            np.arcsin((radius_earth / (radius_earth + avg_heigth)) * 
-                      np.cos(elevation * dtor)))
-
-
-
-def piercing_point_coords(lat_obs, long_obs, w, 
-                          azimuth, dtor):
-
-    Latpp = np.arcsin(np.sin(lat_obs) * np.cos(w) + 
-                  np.cos(lat_obs) * np.sin(w) * 
-                  np.cos(azimuth * dtor))
-
-    Lonpp = (long_obs + np.arcsin((np.sin(w) * 
-                               np.sin(azimuth * dtor)) / 
-                              (np.cos(Latpp))))
-    
-    
-    return np.rad2deg(Latpp[0]), np.rad2deg(Lonpp[0])
-
-
-def TEC_projection(radius_earth, avg_heigth, elevation):
-   
-   
-    zen_comma = np.arcsin((radius_earth / 
-                       (radius_earth + avg_heigth)) * 
-                        np.cos(np.deg2rad(elevation)))
-
-    return np.cos(zen_comma)
-   
-def slant_factor(top_ion_x, bot_ion_x, 
-                 top_ion_y, bot_ion_y, 
-                 top_ion_z, bot_ion_z, 
-                 alt_bottom, alt_top):
- 
-    slant_factor = (np.power(top_ion_x - bot_ion_x, 2.0) + 
-                    np.power(top_ion_y - bot_ion_y, 2.0) +
-                    np.power(top_ion_z - bot_ion_z, 2.0))
- 
-    return (np.sqrt(slant_factor) / (alt_top - alt_bottom))
-     
 def convert_coords(obs_x, obs_y, obs_z):
     
-    crs_from = CRS(proj='geocent', 
-                   ellps='WGS84', 
-                   datum='WGS84')
-    crs_to = CRS(proj='latlong', 
-                 ellps='WGS84', 
-                 datum='WGS84')
+    """
+    Converts cartezian to geodesic coordinates. 
+    Just now, just for the receiver positions.
+    The parameters must be in meters [m]
     
-    transformer = Transformer.from_crs(crs_from, 
-                                       crs_to)
+    """
     
-    lon, lat, alt = transformer.transform(xx=obs_x, 
-                                          yy=obs_y, 
-                                          zz=obs_z, 
+    crs_from = CRS(proj = 'geocent', ellps = 'WGS84', datum = 'WGS84')
+    
+    crs_to = CRS(proj = 'latlong', ellps = 'WGS84', datum = 'WGS84')
+    
+    transformer = Transformer.from_crs(crs_from, crs_to)
+    
+    lon, lat, alt = transformer.transform(xx = obs_x, 
+                                          yy = obs_y, 
+                                          zz = obs_z, 
                                           radians = False) 
+    
+    
+    lon = np.radians(lon + 360) 
+    lat = np.radians(lat)
+    
     return lon, lat, alt
 
 
+class IonosphericPiercingPoint(object):
+    
+    def __init__(self, 
+                 sat_x, sat_y, sat_z, 
+                 obs_x, obs_y, obs_z):
+        
+        # converts meters to kilometers
+        obs_x /= 1000
+        obs_y /= 1000
+        obs_z /= 1000
+        
+        # Compute the relative positions
+        self.dx = (sat_x - obs_x)
+        self.dy = (sat_y - obs_y)
+        self.dz = (sat_z - obs_z)
 
+        self.dxdy = (sat_x * obs_y - sat_y * obs_x)
+        self.dxdz = (sat_x * obs_z - sat_z * obs_x)
+    
+    def positions(self, height = "top"):
+        
+        """Positions of ionospheric piercing point for differents altitudes"""
 
-def main(obs_x, obs_y, obs_z, 
-         sat_x_vals, sat_y_vals, sat_z_vals):
-
-    # Altitudes da ionosfera
-    alt_bottom = 6620.0
-    alt_top = 6870.0
-    
-    radius_earth = 6371.0  # re
-    avg_heigth = 250.0  # hm
-    
-    rad2deg = 57.2958
-    dtor = 0.0174533
-    
-    
-    
-    lon, lat, alt = convert_coords(obs_x, obs_y, obs_z)
-    deg2rad = np.pi / 180.0
-    long_obs = (lon + 360) * deg2rad
-    lat_obs = lat * deg2rad
-    
-    obs_x /= 1000
-    obs_y /= 1000
-    obs_z /= 1000
-    
-    result = []
-    
-    for sat_x, sat_y, sat_z in zip(sat_x_vals, sat_y_vals, sat_z_vals):
-        
-        top_ion_x, top_ion_y, top_ion_z = sub_ion_point(alt_top, 
-                                                        sat_x, sat_y, sat_z, 
-                                                        obs_x, obs_y, obs_z)
-        bot_ion_x, bot_ion_y, bot_ion_z = sub_ion_point(alt_bottom, 
-                                                        sat_x, sat_y, sat_z, 
-                                                        obs_x, obs_y, obs_z)
-        
-        '''
-         slant_factor_ = slant_factor(top_ion_x, bot_ion_x, 
-                                     top_ion_y, bot_ion_y, 
-                                     top_ion_z, bot_ion_z, 
-                                     alt_bottom, alt_top)
-        
-         
-        
-        '''
-        
-        north, east, vertical = directions(sat_x, sat_y, sat_z, 
-                                           obs_x, obs_y, obs_z, 
-                                           long_obs, lat_obs)
-        
-        
-        
-        
-        zangl = vertical_angle(sat_x, sat_y, sat_z, 
-                           obs_x, obs_y, obs_z, 
-                           long_obs, lat_obs, vertical)
-        
-        elevation, azimuth = elevation_and_azimuth(zangl, dtor, east, north)
-    
-        if elevation > 0:
-        
-            w = zangle_in_ionosphere(elevation, dtor, 
-                                     radius_earth, avg_heigth)
+        if height == "top":
+            h = const.alt_top
+        else:
+            h = const.alt_bottom
             
-            Latpp, Lonpp = piercing_point_coords(lat_obs, long_obs, 
-                                                 w, azimuth, dtor)
+        arg_1 = pow((self.dy * self.dxdy + self.dz * self.dxdz), 2)
+        arg_2 = pow(self.dx, 2) + pow(self.dy, 2) + pow(self.dz, 2)
+        arg_3 = pow(self.dxdy, 2) + pow(self.dxdz, 2) - pow(self.dx, 2) * pow(h, 2)
+        arg_4 = (pow(self.dy, 2) + pow(self.dz, 2) + pow(self.dx, 2))
+
+        fator = np.sqrt(arg_1 - arg_2 * arg_3)
+
+        sub_ion_x = (-1 * (self.dy * self.dxdy + 
+                           self.dz * self.dxdz) - fator) / arg_4
         
-            result.append([Latpp, Lonpp])
-        
-    return np.array(result)
- 
+        sub_ion_y = (self.dy * sub_ion_x + self.dxdy) / self.dx
+        sub_ion_z = (self.dz * sub_ion_x + self.dxdz) / self.dx
+
+
+        return sub_ion_x, sub_ion_y, sub_ion_z
     
+    def relative_directions(self, lat, lon):
+        
+        """
+        Relative directions in function of latitude and longitude of receiver
+        (in degrees)
+        """
+        
+        meridional = (-np.cos(lon) * np.sin(lat) * self.dx - 
+                      np.sin(lon) * np.sin(lat) * self.dy + 
+                      np.cos(lat) * self.dz)
 
+        zonal = - np.sin(lon) * self.dx + np.cos(lon) * self.dy
 
+        vertical = (np.cos(lon) * np.cos(lat) * self.dx + 
+                    np.sin(lon) * np.cos(lat) * self.dy + 
+                    np.sin(lat) * self.dz)
+        
+        return meridional, zonal, vertical
+    
+    def zenital_angle(self, lat, lon):
+        """Zenital angle between satellite and receiver"""
+        meridional, zonal, vertical = self.relative_directions(lat, lon)
+        
+        arg_1 = pow(np.cos(lon) * np.cos(lat), 2)
+        arg_2 = pow(np.sin(lon) * np.cos(lat), 2)
+        arg_3 = pow(np.sin(lat), 2)
+        vertical_norm = np.sqrt(arg_1 + arg_2 + arg_3)
+        r = np.sqrt(pow(self.dx, 2) + pow(self.dy, 2) + pow(self.dz, 2))
 
+        return np.arccos(vertical / (r * vertical_norm))
+    
+    def elevation(self, lat, lon):
+        """Elevation angle fro zenital angle"""
+        zangle = self.zenital_angle(lat, lon)
+        return ((np.pi / 2.0) - zangle) / const.dtor
+    
+    def azimuth(self, lat, lon):
+        """Azimuth angle from relative distances"""
+        meridional, zonal, vertical = self.relative_directions(lat, lon)
+        azimuth_angle = np.arctan2(zonal, meridional)
+        if azimuth_angle < 0:
+            azimuth_angle += 2.0 * np.pi 
+        return azimuth_angle #/ const.dtor
+    
+    def zenital_iono_angle(self, lat, lon):
+        """Zenital angle projection in the ionosphere"""
+        el = self.elevation(lat, lon) * const.dtor
+        Re = const.radius_earth
+        hm = const.avg_heigth
+        return ((np.pi / 2.0) - el - np.arcsin((Re / (Re + hm)) * np.cos(el)))
+    
+    def ionospheric_sub_point(self, lat, lon):
+        
+        """ Coordinates of ionospheric sub point (degrees)"""
+    
+        azimuth = self.azimuth(lat, lon)
+        zangle_ion = self.zenital_iono_angle(lat, lon)
+        
+        lat_ip = np.arcsin(np.sin(lat) * np.cos(zangle_ion) + np.cos(lat) * 
+                           np.sin(zangle_ion) * np.cos(azimuth))
 
-
-
+        lon_ip = lon + np.arcsin((np.sin(zangle_ion) * np.sin(azimuth)) / 
+                                 (np.cos(lat_ip)))
+    
+        return np.degrees(lat_ip), np.degrees(lon_ip)
