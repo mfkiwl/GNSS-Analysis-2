@@ -138,3 +138,24 @@ class IonosphericPiercingPoint(object):
                                  (np.cos(lat_ip)))
     
         return np.degrees(lat_ip), np.degrees(lon_ip)
+    
+    
+    def TEC_projection(self, lat, lon):
+     """TEC projection """
+     
+     el = self.elevation(lat, lon)
+     Re = const.radius_earth
+     hm = const.avg_heigth
+
+     return np.cos(np.arcsin((Re / (Re + hm)) * np.cos(np.degrees(el))))
+
+    def slant_factor(self):
+        
+        top_ion_x, top_ion_y, top_ion_z = self.positions(height = "top")
+        bot_ion_x, bot_ion_y, bot_ion_z = self.positions(height = "bottom")
+    
+        slant_factor = (pow(top_ion_x - bot_ion_x, 2.0) + 
+                        pow(top_ion_y - bot_ion_y, 2.0) +
+                        pow(top_ion_z - bot_ion_z, 2.0))
+    
+        return np.sqrt(slant_factor) / (const.alt_top - const.alt_bottom)
