@@ -72,3 +72,34 @@ def piercing_points_data(infile,
 
     return ip
 
+
+def relative_tec_data(filename, prn = "G01"):
+    
+    df = pd.read_csv(filename, 
+                 delim_whitespace=(True), 
+                 index_col = ["sv", "time"])
+    
+    ob = observables(df, prn = prn)
+
+    # phases carriers
+    l1_values = ob.l1
+    l2_values = ob.l2
+
+    # Loss Lock Indicator
+    l1lli_values, l2lli_values = ob.l1lli, ob.l2lli
+
+    # Pseudoranges
+    c1_values, p2_values = ob.c1, ob.p2
+
+    # time
+    time = ob.time
+
+
+    l1, l2, rtec = cycle_slip_corrector(time, l1_values, l2_values, 
+                                            c1_values, p2_values, 
+                                            l1lli_values, l2lli_values)
+    rtec = relative_tec(time, c1_values, 
+                        p2_values, rtec)
+
+
+    return pd.DataFrame({"RTEC": rtec}, index = time)
