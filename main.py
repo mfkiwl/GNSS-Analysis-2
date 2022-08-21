@@ -44,7 +44,9 @@ def piercing_points_data(infile,
 
     lon, lat, alt = convert_coords(obs_x, obs_y, obs_z)
 
-    result = { "lon": [], "lat": [], "time": []}
+    result = { "lon": [], "lat": []}
+    
+    out_times = []
 
 
     for num in range(len(times)):
@@ -62,15 +64,9 @@ def piercing_points_data(infile,
 
             result['lon'].append(lon_ip)
             result['lat'].append(lat_ip)
-            result['time'].append(time)
+            out_times.append(time)
 
-    ip = pd.DataFrame(result)
-
-    ip.index = ip.time
-
-    del ip["time"]
-
-    return ip
+    return pd.DataFrame(result, index = out_times)
 
 
 def relative_tec_data(filename, prn = "G01"):
@@ -103,3 +99,26 @@ def relative_tec_data(filename, prn = "G01"):
 
 
     return pd.DataFrame({"RTEC": rtec}, index = time)
+
+
+def concataned(data_1, data_2 = None, 
+               time_interpol = "10min"):
+    
+    df = pd.concat([data_1, data_2], axis = 1)
+    
+    if time_interpol:
+        df = df.resample(time_interpol).asfreq().interpolate().ffill().bfill()
+    
+    return df
+
+
+
+def example():
+    # Example: Arapiraca (Brazil) positions
+    obs_x, obs_y, obs_z = 5043729.726, -3753105.556, -1072967.067
+    
+    tec = relative_tec_data(filename, prn = "G01")
+    
+    ip = piercing_points_data("Database/jpl17733.sp3/", 
+                          "igr17733.sp3", 
+                          "G01", obs_x, obs_y, obs_z)
