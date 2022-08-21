@@ -35,6 +35,7 @@ def load_receiver(receiver_path, prn = None):
 
     return df
 
+'''
 def load_orbits(orbital_path, prn = None):
 
     orbits = gr.load(orbital_path)
@@ -47,6 +48,25 @@ def load_orbits(orbital_path, prn = None):
     orbits.drop(columns = ["clock", "dclock", "velocity"], inplace = True)
 
     return orbits
+
+'''
+class load_orbits(object):
+
+    def __init__(self, infile, filename, prn = "G05"):
+
+
+        ob = gr.load(infile + filename).to_dataframe()
+        
+        #print(ob)
+
+        self.ob = ob.loc[ob.index.get_level_values("sv") == prn, :]
+
+
+    def position(self, pos = "x"):
+        position = self.ob.loc[self.ob.index.get_level_values("ECEF") == pos, 
+                               ["position"]]
+        position.index = pd.to_datetime(position.index.get_level_values(0))
+        return position
     
     
 def join(receiver_path, orbital_path, first = "orbit"):
@@ -60,15 +80,18 @@ def join(receiver_path, orbital_path, first = "orbit"):
     else:
         return orbit.join(rinex.reindex(rinex.index, level = 1))
 
-def save():
-        time_system = obs.attrs["time_system"]
-        station = obs.attrs["filename"][:4].upper()
-        date = orbits.index.get_level_values('time')[0]
-        date = str(date.date()).replace("-", "")
-        
-        Filename = f"{station}_{time_system}_{date}"
-        
-        df.to_csv(f"Database/{Filename}.txt", sep = " ", index = True)
+def save(receiver_path, df):
+    
+    obs = gr.load(receiver_path, 
+                  useindicators = True)
+    time_system = obs.attrs["time_system"]
+    station = obs.attrs["filename"][:4].upper()
+    date = obs.time[0]
+    date = str(date.date()).replace("-", "")
+    
+    Filename = f"{station}_{time_system}_{date}"
+    
+    df.to_csv(f"Database/{Filename}.txt", sep = " ", index = True)
 
 
 def find_header(infile:str, 
@@ -115,7 +138,8 @@ def read_dcb(infile, filename):
         creation_time = dat[13:18].strip()
         code = dat[18: 28].strip()
 
-        return [BIAS, version, file_agency, creation_time, code] + dat[28:].split()
+        return [BIAS, version, file_agency, 
+                creation_time, code] + dat[28:].split()
 
 
     str_data =  [_extract_elements(num) for num in data]
@@ -138,9 +162,3 @@ def read_dcb(infile, filename):
 def main():
     receiver_path = "Database/alar0011/alar0011.14o"
     orbital_path = "Database/jpl17733.sp3/igr17733.sp3"
-    
-    df = join_orbits_with_receiver(receiver_path, 
-                                  orbital_path, save = True)
-    
-    df
-    
