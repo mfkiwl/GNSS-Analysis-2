@@ -11,8 +11,7 @@ def piercing_points_data(infile: str,
     
     obs_x, obs_y, obs_z = obs[0], obs[1], obs[2]
     
-    ob = load_orbits(infile, 
-                     prn = prn)
+    ob = load_orbits(infile, prn = prn)
 
     sat_x_vals = ob.position("x").values.ravel()
     sat_y_vals = ob.position("y").values.ravel()
@@ -76,35 +75,45 @@ def relative_tec_data(infile: str,
     return pd.DataFrame({"RTEC": rtec}, index = time)
 
 
-def concat_data(data_1: pd.DataFrame, 
-                data_2: pd.DataFrame, 
+def concat_data(path_tec: str, 
+                path_orbit: str, 
+                obs: list,
+                prn: str,
                 time_for_interpol: str = "10min"):
     
-    df = pd.concat([data_1, data_2], axis = 1)
+    """Concat the relative TEC for each piercing point"""
+    tecData = relative_tec_data(path_tec, prn = prn)
+    ippData = piercing_points_data(path_orbit, obs, prn = prn)
+    
+    df = pd.concat([tecData, ippData], axis = 1)
     
     if time_for_interpol:
         df = df.resample(time_for_interpol).asfreq(
             ).interpolate().ffill().bfill()
     
-    return df
-
-
-
-def example():
-    # Example: Arapiraca (Brazil) positions
-    obs_x, obs_y, obs_z = 5043729.726, -3753105.556, -1072967.067
+        return df
     
+    else:
+        return df.dropna()
+
+
+
+
+def main():
+    
+    obs_x, obs_y, obs_z = 5043729.726, -3753105.556, -1072967.067
+
     obs = list((obs_x, obs_y, obs_z))
     prn = "G01"
     path_tec = "Database/alar0011.14o.txt"
     path_orbit = "Database/jpl17733.sp3/igr17733.sp3"
     
-
-    tecData = relative_tec_data(path_tec, prn = prn)
-    ippData = piercing_points_data(path_orbit, obs, prn = prn)
-       
-    df = concat_data(ippData, tecData)
+    df = concat_data(path_tec, 
+                     path_orbit, 
+                     obs, prn, 
+                     time_for_interpol = None)
     
-    return df
-
-example()
+    print(df)
+    
+    
+main()
