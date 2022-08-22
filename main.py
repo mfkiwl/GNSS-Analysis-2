@@ -3,7 +3,7 @@ from load import *
 from sub_ionospheric_point import *
 from cycle_slips import *
 from relative_tec_calculator import *
-
+from dcb_calculator import sat_bias_corrector
         
 def piercing_points_data(infile: str,     
                          obs: list, 
@@ -21,7 +21,7 @@ def piercing_points_data(infile: str,
 
     lon, lat, alt = convert_coords(obs_x, obs_y, obs_z)
 
-    result = { "lon": [], "lat": []}
+    result = { "lon": [], "lat": [], "el": []}
     
     index = []
 
@@ -42,6 +42,7 @@ def piercing_points_data(infile: str,
 
             result['lon'].append(lon_ip)
             result['lat'].append(lat_ip)
+            result["el"].append(elevation)
             index.append(time)
 
     return pd.DataFrame(result, index = index)
@@ -72,10 +73,10 @@ def relative_tec_data(infile: str,
                         p2_values, rtec)
 
 
-    return pd.DataFrame({"RTEC": rtec}, index = time)
+    return pd.DataFrame({"rTEC": rtec}, index = time)
 
 
-def concat_data(path_tec: str, 
+def process_data(path_tec: str, 
                 path_orbit: str, 
                 path_dcb: str,
                 obs: list,
@@ -85,16 +86,18 @@ def concat_data(path_tec: str,
     """Concat the relative TEC for each piercing point"""
     
     
-    sat_bias = sat_bias_corrector(infile, prn = prn)
+    sat_bias = sat_bias_corrector(path_dcb, prn = prn)
 
-    
     tecData = relative_tec_data(path_tec, prn = prn)
     
-    tecData["cTEC"] = tecData["RTEC"] - sat_bias
+    tecData["cTEC"] = tecData["rTEC"] - sat_bias
+    
     
     ippData = piercing_points_data(path_orbit, obs, prn = prn)
     
     df = pd.concat([tecData, ippData], axis = 1)
+    
+    df["vTEC"] = TEC_projection(df["el"]) * df["cTEC"]
     
     if time_for_interpol:
         df = df.resample(time_for_interpol).asfreq(
@@ -113,21 +116,23 @@ def main():
     obs_x, obs_y, obs_z = 5043729.726, -3753105.556, -1072967.067
 
     obs = list((obs_x, obs_y, obs_z))
+    
     prn = "G01"
     path_tec = "Database/alar0011.14o.txt"
     path_orbit = "Database/jpl17733.sp3/igr17733.sp3"
     path_dcb = "Database/dcb/2014/CAS0MGXRAP_20140010000_01D_01D_DCB.BSX"
 
-    '''
-    df = concat_data(path_tec, 
+    
+    df = process_data(path_tec, 
                      path_orbit, 
+                     path_dcb,
                      obs, prn, 
                      time_for_interpol = None)
-    '''
+  
    
+    df[["vTEC", "rTEC", "cTEC"]].plot()
     
-    
-    df = relative_tec_data(path_tec)
+    #df = relative_tec_data(path_tec)
     
     print(df)
     
