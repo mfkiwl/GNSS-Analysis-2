@@ -1,7 +1,8 @@
 from constants import *
-from main import *
+import datetime
+import numpy as np
+from load import *
 
-        
         
 def correct_phases(RTEC, MWLC, 
                    l1_values, l2_values, 
@@ -70,7 +71,6 @@ def cycle_slip_corrector(time, l1_values, l2_values,
         if (time[index] - time[index - 1] > datetime.timedelta(minutes = 15)):
             index_start = index
             
-            #continue # Essa condição talvez esteja compromentando o segundo loop
         l_slip1 = l1lli_values[index] % 2
         l_slip2 = l2lli_values[index] % 2
         
@@ -79,7 +79,8 @@ def cycle_slip_corrector(time, l1_values, l2_values,
             
             l1_values, l2_values = correct_phases(RTEC, MWLC, 
                                                   l1_values, l2_values, 
-                                                  c1_values, p2_values, index)
+                                                  c1_values, p2_values, 
+                                                  index)
             
         pmean = 0.0
         pdev = const.DIFF_TEC_MAX * 4.0
@@ -109,7 +110,8 @@ def cycle_slip_corrector(time, l1_values, l2_values,
             
             l1_values, l2_values = correct_phases(RTEC, MWLC, 
                                                   l1_values, l2_values, 
-                                                  c1_values, p2_values, index)
+                                                  c1_values, p2_values, 
+                                                  index)
 
             
     return l1_values, l2_values, RTEC
@@ -121,7 +123,7 @@ def main():
     filename = "alar0011.14o"
 
     df = pd.read_csv(f"Database/{filename}.txt", 
-                     delim_whitespace=(True), 
+                     delim_whitespace = (True), 
                      index_col = ["sv", "time"])
 
 
@@ -146,3 +148,5 @@ def main():
     l1, l2, rtec = cycle_slip_corrector(time, l1_values, l2_values, 
                                         c1_values, p2_values, 
                                         l1lli_values, l2lli_values)
+    
+main()
