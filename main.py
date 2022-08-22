@@ -5,13 +5,13 @@ from cycle_slips import *
 from relative_tec_calculator import *
 
         
-def piercing_points_data(infile, 
-                         filename, 
-                         prn, 
-                         obs_x, obs_y, obs_z):
-
+def piercing_points_data(infile: str,     
+                         obs: list, 
+                         prn: str = "G01") -> pd.DataFrame:
+    
+    obs_x, obs_y, obs_z = obs[0], obs[1], obs[2]
+    
     ob = load_orbits(infile, 
-                     filename, 
                      prn = prn)
 
     sat_x_vals = ob.position("x").values.ravel()
@@ -24,8 +24,7 @@ def piercing_points_data(infile,
 
     result = { "lon": [], "lat": []}
     
-    out_times = []
-
+    index = []
 
     for num in range(len(times)):
 
@@ -44,33 +43,29 @@ def piercing_points_data(infile,
 
             result['lon'].append(lon_ip)
             result['lat'].append(lat_ip)
-            out_times.append(time)
+            index.append(time)
 
-    return pd.DataFrame(result, index = out_times)
+    return pd.DataFrame(result, index = index)
 
 
-def relative_tec_data(filename, prn = "G01"):
+def relative_tec_data(infile: str, 
+                      prn: str = "G01") -> pd.DataFrame:
     
-    df = pd.read_csv(filename, 
+    df = pd.read_csv(infile, 
                  delim_whitespace=(True), 
                  index_col = ["sv", "time"])
     
     ob = observables(df, prn = prn)
 
-    # phases carriers
-    l1_values = ob.l1
-    l2_values = ob.l2
-
+    # Phases carriers
+    l1_values, l2_values = ob.l1, ob.l2
     # Loss Lock Indicator
-    l1lli_values, l2lli_values = ob.l1lli, ob.l2lli
-
+    l1lli_values, l2lli_values = ob.l1lli, ob.l2lli  
     # Pseudoranges
-    c1_values, p2_values = ob.c1, ob.p2
+    c1_values, p2_values = ob.c1, ob.p2  
 
-    # time
-    time = ob.time
-
-
+    
+    time = ob.time # time
     l1, l2, rtec = cycle_slip_corrector(time, l1_values, l2_values, 
                                             c1_values, p2_values, 
                                             l1lli_values, l2lli_values)
@@ -81,13 +76,15 @@ def relative_tec_data(filename, prn = "G01"):
     return pd.DataFrame({"RTEC": rtec}, index = time)
 
 
-def concat_data(data_1, data_2, 
-               time_for_interpol = "10min"):
+def concat_data(data_1: pd.DataFrame, 
+                data_2: pd.DataFrame, 
+                time_for_interpol: str = "10min"):
     
     df = pd.concat([data_1, data_2], axis = 1)
     
     if time_for_interpol:
-        df = df.resample(time_interpol).asfreq().interpolate().ffill().bfill()
+        df = df.resample(time_for_interpol).asfreq(
+            ).interpolate().ffill().bfill()
     
     return df
 
@@ -97,21 +94,17 @@ def example():
     # Example: Arapiraca (Brazil) positions
     obs_x, obs_y, obs_z = 5043729.726, -3753105.556, -1072967.067
     
-    
-    filename = "Database/alar0011.14o.txt"
-
-
-
-    tec = relative_tec_data(filename, prn = "G01")
-    
-    ip = piercing_points_data("Database/jpl17733.sp3/", 
-                          "igr17733.sp3", 
-                          "G01", obs_x, obs_y, obs_z)
+    obs = list((obs_x, obs_y, obs_z))
+    prn = "G01"
+    path_tec = "Database/alar0011.14o.txt"
+    path_orbit = "Database/jpl17733.sp3/igr17733.sp3"
     
 
+    tecData = relative_tec_data(path_tec, prn = prn)
+    ippData = piercing_points_data(path_orbit, obs, prn = prn)
+       
+    df = concat_data(ippData, tecData)
     
-    df = concat_data(ip, tec)
-
-
+    return df
 
 example()
