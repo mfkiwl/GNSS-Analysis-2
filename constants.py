@@ -11,11 +11,9 @@ class constants(object):
     
     # Fundamental constants
     F1 = 1575.42e6 
-    
     F2 = 1227.60e6
     c = 299792458.0
-    
-    
+     
     TECU = 1.0e16 
     A = 40.3  
     
@@ -41,29 +39,3 @@ class constants(object):
     factor_TEC = ((F1 * F2) ** 2) / (F1 + F2) / (F1 - F2) / A / TECU
         
    
-"""
-class factors(object):
-        
-    def __init__(self, 
-                 l1 = None, 
-                 l2 = None, 
-                 c1 = None, 
-                 p2 = None):
-        
-        
-        self.l1 = l1
-        self.l2 = l2
-        self.c1 = c1
-        self.p2 = p2
-        
-        const = constants()
-     
-
-"""
-
-        
-           
-     
-
-
-#print(const.F1)
