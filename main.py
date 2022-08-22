@@ -77,12 +77,21 @@ def relative_tec_data(infile: str,
 
 def concat_data(path_tec: str, 
                 path_orbit: str, 
+                path_dcb: str,
                 obs: list,
                 prn: str,
                 time_for_interpol: str = "10min"):
     
     """Concat the relative TEC for each piercing point"""
+    
+    
+    sat_bias = sat_bias_corrector(infile, prn = prn)
+
+    
     tecData = relative_tec_data(path_tec, prn = prn)
+    
+    tecData["cTEC"] = tecData["RTEC"] - sat_bias
+    
     ippData = piercing_points_data(path_orbit, obs, prn = prn)
     
     df = pd.concat([tecData, ippData], axis = 1)
@@ -107,11 +116,18 @@ def main():
     prn = "G01"
     path_tec = "Database/alar0011.14o.txt"
     path_orbit = "Database/jpl17733.sp3/igr17733.sp3"
-    
+    path_dcb = "Database/dcb/2014/CAS0MGXRAP_20140010000_01D_01D_DCB.BSX"
+
+    '''
     df = concat_data(path_tec, 
                      path_orbit, 
                      obs, prn, 
                      time_for_interpol = None)
+    '''
+   
+    
+    
+    df = relative_tec_data(path_tec)
     
     print(df)
     
