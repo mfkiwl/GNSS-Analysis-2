@@ -4,15 +4,12 @@ Created on Thu Aug 11 09:50:22 2022
 
 @author: Luiz
 """
-
-import pandas as pd
-import georinex as gr
-from sub_ionospheric_point import *
+from main import example
 import cartopy.feature as cf
 import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
 import numpy as np
-
+from load import *
 
 def plotMapping(start_lat = -40, 
                 end_lat = 15, 
@@ -39,6 +36,10 @@ def plotMapping(start_lat = -40,
                         facecolor='none')
     
     
+    
+
+    
+    
     ax.add_feature(states_provinces, edgecolor='black')
     ax.add_feature(cf.COASTLINE, edgecolor='black', lw = 2) 
     ax.add_feature(cf.BORDERS, linestyle='-', edgecolor='black')
@@ -58,6 +59,32 @@ def plotMapping(start_lat = -40,
     return ax
 
 
+obs_x, obs_y, obs_z = 5043729.726, -3753105.556, -1072967.067
 
+obs = list((obs_x, obs_y, obs_z))
+prn = "G01"
+path_tec = "Database/alar0011.14o.txt"
+path_orbit = "Database/jpl17733.sp3/igr17733.sp3"
     
+    
+df = pd.read_csv(path_tec, 
+                 delim_whitespace = True, 
+                 index_col = ["sv", "time"])
+
+prns = observables(df).prns
+
+ax =  plotMapping()
+
+
+for prn in prns:
+    
+    if "G" in prn:
+
+        df = concat_data(path_tec, path_orbit, 
+                         obs, prn, 
+                         time_for_interpol = None)
+
+        ax.scatter(df.lon, df.lat, c = df.RTEC, 
+                   s = 20, cmap = "jet")
+
 
