@@ -50,6 +50,10 @@ def load_orbits(orbital_path, prn = None):
     return orbits
 
 '''
+
+
+
+        
 class load_orbits(object):
 
     def __init__(self, infile, filename, prn = "G05"):
@@ -80,20 +84,34 @@ def join(receiver_path, orbital_path, first = "orbit"):
     else:
         return orbit.join(rinex.reindex(rinex.index, level = 1))
 
-def save(receiver_path, df):
-    
-    obs = gr.load(receiver_path, 
-                  useindicators = True)
-    time_system = obs.attrs["time_system"]
-    station = obs.attrs["filename"][:4].upper()
-    date = obs.time[0]
-    date = str(date.date()).replace("-", "")
-    
-    Filename = f"{station}_{time_system}_{date}"
-    
-    df.to_csv(f"Database/{Filename}.txt", sep = " ", index = True)
 
 
+
+class observables(object):
+    
+    def __init__(self, df, prn = None):
+        
+        self.df = df 
+        self.prns = np.unique(self.df.index.get_level_values('sv').values)
+        
+        if prn is not None:
+            obs = self.df.loc[self.df.index.get_level_values('sv') == prn, :]
+        else:
+            obs = self.df
+    
+        self.l1 = obs.L1.values
+        self.l2 = obs.L2.values
+        self.c1 = obs.C1.values
+        self.p2 = obs.P2.values
+        
+        self.l1lli = obs.L1lli.values.astype(int)
+        self.l2lli = obs.L2lli.values.astype(int)
+        
+        self.time = pd.to_datetime(obs.index.get_level_values('time'))
+        
+        
+        
+        
 def find_header(infile:str, 
                 filename: str, 
                 header: str = 'yyyy.MM.dd') -> tuple:
@@ -120,8 +138,7 @@ def find_header(infile:str,
 
     
     
-infile = "Database/CAS0MGXRAP_20140010000_01D_01D_DCB.BSX/"
-filename = "CAS0MGXRAP_20140010000_01D_01D_DCB.BSX"
+
 
 def read_dcb(infile, filename):
 
