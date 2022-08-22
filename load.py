@@ -56,10 +56,10 @@ def load_orbits(orbital_path, prn = None):
         
 class load_orbits(object):
 
-    def __init__(self, infile, filename, prn = "G05"):
+    def __init__(self, infile, prn = "G05"):
 
 
-        ob = gr.load(infile + filename).to_dataframe()
+        ob = gr.load(infile).to_dataframe()
         
         #print(ob)
 
