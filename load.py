@@ -8,6 +8,7 @@ Created on Tue Aug  9 10:24:16 2022
 import georinex as gr
 import pandas as pd
 import numpy as np
+import datetime
 
 def load_receiver(receiver_path, prn = None):
 
@@ -35,26 +36,52 @@ def load_receiver(receiver_path, prn = None):
 
     return df
 
-'''
-def load_orbits(orbital_path, prn = None):
 
-    orbits = gr.load(orbital_path)
-
-    if prn == None:
-        orbits = orbits.to_dataframe()
-    else:
-        orbits = orbits.sel(sv = prn).to_dataframe()
-
-    orbits.drop(columns = ["clock", "dclock", "velocity"], inplace = True)
-
-    return orbits
-
-'''
-
-
-
-        
 class load_orbits(object):
+    
+    """Read orbit data (CDDIS Nasa)"""
+
+    def __init__(self, orbital_path, prn = "G01"):
+        
+        self.orbital_path = orbital_path
+        self.prn = prn
+
+        self.ob = gr.load(self.orbital_path).sel(sv =  self.prn).to_dataframe()
+        
+        self.time = pd.to_datetime(np.unique(self.ob.index.get_level_values('time')))
+
+
+    def position(self, interpol:str = "30s"):
+    
+        pos_values = {}
+        
+        for coord in ["x", "y", "z"]:
+            
+            pos_values[coord] = self.ob.loc[self.ob.index.get_level_values("ECEF") == coord, 
+                               ["position"]].values.ravel()
+
+        self.pos = pd.DataFrame(pos_values, index = self.time)
+        
+        if interpol:
+            end = self.pos.index[0] + datetime.timedelta(hours = 23, 
+                                                         minutes = 59, 
+                                                         seconds = 30)
+            start = self.pos.index[0]
+            
+            self.pos = self.pos.reindex(pd.date_range(start = start, end = end, freq = interpol))
+
+            self.pos = self.pos.interpolate(method='spline', order = 5)
+            
+            self.pos.columns.names = [self.prn]
+        
+        return self.pos
+    
+"""
+
+
+class load_orbits(object):
+    
+    Read orbit data (CDDIS Nasa)
 
     def __init__(self, infile, prn = "G05"):
 
@@ -71,6 +98,8 @@ class load_orbits(object):
                                ["position"]]
         position.index = pd.to_datetime(position.index.get_level_values(0))
         return position
+"""
+
     
     
 def join(receiver_path, orbital_path, first = "orbit"):
@@ -109,69 +138,7 @@ class observables(object):
         
         self.time = pd.to_datetime(obs.index.get_level_values('time'))
         
-        
-        
-        
-def find_header(infile:str, 
-                filename: str, 
-                header: str = 'yyyy.MM.dd') -> tuple:
 
-    """Function for find the header and the data body"""
-
-    with open(infile + filename) as f:
-        data = [line.strip() for line in f.readlines()]
-
-    count = 0
-    for num in range(len(data)):
-        if (header) in data[num]:
-            break
-        else:
-            count += 1
-
-
-    data_ = data[count + 2: - 3]
-
-
-    header_ = data[count + 1].split(" ")
-
-    return (header_, data_)
-
-    
-    
-
-
-def read_dcb(infile, filename):
-
-    header, data = find_header(infile,
-                filename, 
-                header = '+BIAS/SOLUTION')
-
-
-
-    def _extract_elements(dat):
-        BIAS = dat[:5].strip()
-        version = dat[5:9].strip()
-        file_agency = dat[9:13].strip()
-        creation_time = dat[13:18].strip()
-        code = dat[18: 28].strip()
-
-        return [BIAS, version, file_agency, 
-                creation_time, code] + dat[28:].split()
-
-
-    str_data =  [_extract_elements(num) for num in data]
-
-    names = ["bias", "svn", "prn", "site", 
-            "domes", "obs1", "obs2", "b_start", 
-            "b_end", "unit", "value", "std"]
-
-
-    df = pd.DataFrame(str_data, columns = names)
-
-    df[["value", "std"]] = df[["value", "std"]].apply(pd.to_numeric, 
-                                                      errors='coerce')
-
-    return df
 
 
 
