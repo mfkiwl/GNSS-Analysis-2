@@ -8,7 +8,8 @@ from dcb_calculator import sat_bias_corrector
 def piercing_points_data(orbital_path: str,     
                          obs: list, 
                          prn: str = "G01") -> pd.DataFrame:
-    
+    """Read orbits files fpr each prn and compute the ionospheric 
+    Piercing point (given by latitude and longitude)"""
     ox, oy, oz = obs[0], obs[1], obs[2]
     
     df = load_orbits(orbital_path, prn = prn).position()
@@ -31,8 +32,7 @@ def piercing_points_data(orbital_path: str,
         
         time = times[num]
         
-        ip = IonosphericPiercingPoint(sx, sy, sz, 
-                                      ox, oy, oz)
+        ip = IonosphericPiercingPoint(sx, sy, sz, ox, oy, oz)
 
         elevation = ip.elevation(lat, lon)
 
@@ -98,18 +98,16 @@ def process_data(path_tec: str,
       
     ippData = piercing_points_data(path_orbit, obs, prn = prn)
     
-    #df["vTEC"] = TEC_projection(df["el"]) #* df["cTEC"]
-
     
     df = tecData.join(ippData).interpolate()
     
+    df["vTEC"] = TEC_projection(df["el"]) * df["rTEC"]
     
     df = df.dropna(subset = ["lat", "lon", "el"])
     
     df.columns.names = [prn]
     
-    return df#.loc[df["el"] > 0, :]
-
+    return df
 
 
 
@@ -138,7 +136,7 @@ def main():
     #df[["vTEC", "rTEC", "cTEC"]].plot()
     
 
-    print(df1)
+    df1.to_csv("test.txt", sep = " ", index = True)
     
     
 
