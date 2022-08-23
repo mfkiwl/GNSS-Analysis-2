@@ -9,7 +9,7 @@ def piercing_points_data(orbital_path: str,
                          obs: list, 
                          prn: str = "G01") -> pd.DataFrame:
     
-    obs_x, obs_y, obs_z = obs[0], obs[1], obs[2]
+    ox, oy, oz = obs[0], obs[1], obs[2]
     
     df = load_orbits(orbital_path, prn = prn).position()
 
@@ -19,7 +19,7 @@ def piercing_points_data(orbital_path: str,
 
     times = df.index
 
-    lon, lat, alt = convert_coords(obs_x, obs_y, obs_z)
+    lon, lat, alt = convert_coords(ox, oy, oz)
 
     result = { "lon": [], "lat": [], "el": []}
     
@@ -27,12 +27,12 @@ def piercing_points_data(orbital_path: str,
 
     for num in range(len(times)):
 
-        sat_x, sat_y, sat_z = sat_x_vals[num], sat_y_vals[num], sat_z_vals[num]
+        sx, sy, sz = df.x.values[num], df.y.values[num], df.z.values[num]
         
         time = times[num]
         
-        ip = IonosphericPiercingPoint(sat_x, sat_y, sat_z, 
-                                      obs_x, obs_y, obs_z)
+        ip = IonosphericPiercingPoint(sx, sy, sz, 
+                                      ox, oy, oz)
 
         elevation = ip.elevation(lat, lon)
 
@@ -82,8 +82,7 @@ def process_data(path_tec: str,
                 path_orbit: str, 
                 path_dcb: str,
                 obs: list,
-                prn: str,
-                interpol: str = "30s"):
+                prn: str):
     
     """
     Concat the relative TEC for each piercing point 
@@ -99,14 +98,17 @@ def process_data(path_tec: str,
       
     ippData = piercing_points_data(path_orbit, obs, prn = prn)
     
-    df = pd.concat([tecData, ippData], axis = 1)
+    #df["vTEC"] = TEC_projection(df["el"]) #* df["cTEC"]
+
+    
+    df = tecData.join(ippData).interpolate()
+    
     
     df = df.dropna(subset = ["lat", "lon", "el"])
     
     df.columns.names = [prn]
-    #df["vTEC"] = TEC_projection(df["el"]) #* df["cTEC"]
     
-    return df.loc[df["el"] > 0, :]
+    return df#.loc[df["el"] > 0, :]
 
 
 
@@ -127,17 +129,16 @@ def main():
     path_dcb = "CAS0MGXRAP_20220010000_01D_01D_DCB.BSX"
 
     
-    df = process_data(path_tec, 
+    df1 = process_data(path_tec, 
                      path_orbit, 
                      path_dcb,
-                     obs, prn, 
-                     interpol = None)
+                     obs, prn)
   
    
     #df[["vTEC", "rTEC", "cTEC"]].plot()
     
 
-    print(df)
+    print(df1)
     
     
 
