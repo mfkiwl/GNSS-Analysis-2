@@ -1,23 +1,23 @@
 from constants import *
 from load import *
 from sub_ionospheric_point import *
-from cycle_slips import *
-from relative_tec_calculator import *
+from cycle_slips import cycle_slip_corrector
+from relative_tec_calculator import relative_tec
 from dcb_calculator import sat_bias_corrector
         
-def piercing_points_data(infile: str,     
+def piercing_points_data(orbital_path: str,     
                          obs: list, 
                          prn: str = "G01") -> pd.DataFrame:
     
     obs_x, obs_y, obs_z = obs[0], obs[1], obs[2]
     
-    ob = load_orbits(infile, prn = prn)
+    df = load_orbits(orbital_path, prn = prn).position()
 
-    sat_x_vals = ob.position("x").values.ravel()
-    sat_y_vals = ob.position("y").values.ravel()
-    sat_z_vals = ob.position("z").values.ravel()
+    sat_x_vals = df.x.values
+    sat_y_vals = df.y.values
+    sat_z_vals = df.z.values
 
-    times = ob.position("x").index
+    times = df.index
 
     lon, lat, alt = convert_coords(obs_x, obs_y, obs_z)
 
@@ -38,22 +38,23 @@ def piercing_points_data(infile: str,
 
         lat_ip, lon_ip = ip.ionospheric_sub_point(lat, lon)
 
-        if elevation > 0:
-
-            result['lon'].append(lon_ip)
-            result['lat'].append(lat_ip)
-            result["el"].append(elevation)
-            index.append(time)
+        result['lon'].append(lon_ip)
+        result['lat'].append(lat_ip)
+        result["el"].append(elevation)
+        index.append(time)
 
     return pd.DataFrame(result, index = index)
 
 
 def relative_tec_data(infile: str, 
                       prn: str = "G01") -> pd.DataFrame:
-    
+    """
+    Read rinex pre-process files (already missing values removed), 
+    correcter cycle-slip and compute the relative tec
+    """
     df = pd.read_csv(infile, 
-                 delim_whitespace=(True), 
-                 index_col = ["sv", "time"])
+                     delim_whitespace=(True), 
+                     index_col = ["sv", "time"])
     
     ob = observables(df, prn = prn)
 
@@ -63,12 +64,13 @@ def relative_tec_data(infile: str,
     l1lli_values, l2lli_values = ob.l1lli, ob.l2lli  
     # Pseudoranges
     c1_values, p2_values = ob.c1, ob.p2  
-
-    
     time = ob.time # time
-    l1, l2, rtec = cycle_slip_corrector(time, l1_values, l2_values, 
-                                            c1_values, p2_values, 
-                                            l1lli_values, l2lli_values)
+    
+    
+    l1, l2, rtec = cycle_slip_corrector(time, 
+                                        l1_values, l2_values, 
+                                        c1_values, p2_values, 
+                                        l1lli_values, l2lli_values)
     rtec = relative_tec(time, c1_values, 
                         p2_values, rtec)
 
@@ -81,32 +83,30 @@ def process_data(path_tec: str,
                 path_dcb: str,
                 obs: list,
                 prn: str,
-                time_for_interpol: str = "10min"):
+                interpol: str = "30s"):
     
-    """Concat the relative TEC for each piercing point"""
+    """
+    Concat the relative TEC for each piercing point 
+    and compute other variables
+    """
     
     
-    sat_bias = sat_bias_corrector(path_dcb, prn = prn)
+    #sat_bias = sat_bias_corrector(path_dcb, prn = prn)
 
     tecData = relative_tec_data(path_tec, prn = prn)
     
-    tecData["cTEC"] = tecData["rTEC"] - sat_bias
-    
-    
+    #tecData["cTEC"] = tecData["rTEC"] - sat_bias
+      
     ippData = piercing_points_data(path_orbit, obs, prn = prn)
     
     df = pd.concat([tecData, ippData], axis = 1)
     
-    df["vTEC"] = TEC_projection(df["el"]) * df["cTEC"]
+    df = df.dropna(subset = ["lat", "lon", "el"])
     
-    if time_for_interpol:
-        df = df.resample(time_for_interpol).asfreq(
-            ).interpolate().ffill().bfill()
+    df.columns.names = [prn]
+    #df["vTEC"] = TEC_projection(df["el"]) #* df["cTEC"]
     
-        return df
-    
-    else:
-        return df.dropna()
+    return df.loc[df["el"] > 0, :]
 
 
 
@@ -118,23 +118,27 @@ def main():
     obs = list((obs_x, obs_y, obs_z))
     
     prn = "G01"
-    path_tec = "Database/alar0011.14o.txt"
-    path_orbit = "Database/jpl17733.sp3/igr17733.sp3"
-    path_dcb = "Database/dcb/2014/CAS0MGXRAP_20140010000_01D_01D_DCB.BSX"
+    #path_tec = "Database/alar0011.14o.txt"
+    #path_orbit = "Database/jpl17733.sp3/igr17733.sp3"
+    #path_dcb = "Database/dcb/2014/CAS0MGXRAP_20140010000_01D_01D_DCB.BSX"
+    
+    path_tec = "alar0011.22o.txt"
+    path_orbit = "igr21906.sp3"
+    path_dcb = "CAS0MGXRAP_20220010000_01D_01D_DCB.BSX"
 
     
     df = process_data(path_tec, 
                      path_orbit, 
                      path_dcb,
                      obs, prn, 
-                     time_for_interpol = None)
+                     interpol = None)
   
    
-    df[["vTEC", "rTEC", "cTEC"]].plot()
+    #df[["vTEC", "rTEC", "cTEC"]].plot()
     
-    #df = relative_tec_data(path_tec)
-    
+
     print(df)
     
     
+
 main()
