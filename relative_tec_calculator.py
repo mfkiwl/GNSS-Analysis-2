@@ -48,42 +48,47 @@ def relative_tec(time, c1, p2, rtec):
         
     return rtec
 
-def main():
-    
-    filename = "alar0011.14o"
-
-    df = pd.read_csv(f"Database/{filename}.txt", 
+def relative_tec_data(infile: str, 
+                      prn: str = "G01") -> pd.DataFrame:
+    """
+    Read rinex pre-process files (already missing values removed), 
+    correcter cycle-slip and compute the relative tec
+    """
+    df = pd.read_csv(infile, 
                      delim_whitespace=(True), 
                      index_col = ["sv", "time"])
-
-
-    prn = "G01"
+    
     ob = observables(df, prn = prn)
 
-    # phases carriers
-    l1_values = ob.l1
-    l2_values = ob.l2
-
-    # Loss Lock Indicator (lli)
-    l1lli_values, l2lli_values = ob.l1lli, ob.l2lli
-
+    # Phases carriers
+    l1_values, l2_values = ob.l1, ob.l2
+    # Loss Lock Indicator
+    l1lli_values, l2lli_values = ob.l1lli, ob.l2lli  
     # Pseudoranges
-    c1_values, p2_values = ob.c1, ob.p2
-
-    # time
-    time = ob.time
-
+    c1_values, p2_values = ob.c1, ob.p2  
+    time = ob.time # time
     
-
-    l1, l2, rtec = cycle_slip_corrector(time, l1_values, l2_values, 
+    
+    l1, l2, rtec = cycle_slip_corrector(time, 
+                                        l1_values, l2_values, 
                                         c1_values, p2_values, 
                                         l1lli_values, l2lli_values)
-    
-    
     rtec = relative_tec(time, c1_values, 
                         p2_values, rtec)
-   
-    print(rtec)
+
+
+    return pd.DataFrame({"rTEC": rtec}, index = time)
     
     
+def main():
     
+    
+    infile = "alar0011.22o.txt"
+
+    df = relative_tec_data(infile, 
+                      prn = "G01")    
+    
+    
+    print(df)
+    
+main()
