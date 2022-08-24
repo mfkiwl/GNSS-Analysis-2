@@ -3,79 +3,81 @@ import pandas as pd
 from constants import constants as const
 
 
-def find_header(infile:str,
-                header: str = 'yyyy.MM.dd') -> tuple:
-
-    """Function for find the header (string) and the data body"""
-
-    with open(infile) as f:
-        data = [line.strip() for line in f.readlines()]
-
+def find_element(data, header):
+    
+    """Find the header (like string) and the data body"""
     count = 0
     for num in range(len(data)):
         if (header) in data[num]:
             break
         else:
             count += 1
+    return count
 
 
-    data_ = data[count + 2: - 3]
 
+def separe_elements(dat):
+    BIAS = dat[:5].strip()
+    version = dat[5:9].strip()
+    file_agency = dat[9:13].strip()
+    creation_time = dat[13:18].strip()
+    code = dat[18:28].strip()
 
-    header_ = data[count + 1].split(" ")
+    return [BIAS, version, file_agency, 
+            creation_time, code] + dat[28:].split()
 
-    return (header_, data_)
-
+def load_dcb(infile):
     
-def load_dcb(infile, filename = None):
+    with open(infile) as f:
+        data = [line.strip() for line in f.readlines()]
+
+    count = find_element(data, header = "*BIAS")
+
+    header = [i.replace("_", "").lower() for i in data[count:][0].split()]
+
+    data_result = []
+
+    for element in data[count + 1:]:
+        
+        if "-BIAS" in element:
+            break
+        else:
+            data_result.append(separe_elements(element))
+
+    return pd.DataFrame(data_result, columns = header)
+
+
+
+class load_cdb(object):
     
-    """GNSS Differential Code Bias (DCBs) """
+    """Load and getting GNSS Differential Code Bias (DCBs) value"""
+    
+    def __init__(self, infile, prn = "G01"):
+        
+        self.dcb = load_dcb(infile)
+        
+        if prn[0] == "G":
+            receiver_type = "C2X"
+    
+
+        value = self.dcb.loc[(self.dcb["obs2"] == receiver_type) & 
+                            (self.dcb["prn"] == prn),  "estimatedvalue"]
+        
+    
+        self.value = float(value)
+
+        self.value_tec = ((-1 * self.value) * (const.c / pow(10, 9))) * const.factor_TEC
+        
+        
+
+
+def main():
+    infile = "Database/dcb/2014/CAS0MGXRAP_20140010000_01D_01D_DCB.BSX"
+    infile = "CAS0MGXRAP_20220010000_01D_01D_DCB.BSX"
+    bias = load_cdb(infile).value_tec
     
     
-    if filename == None:
-        path = infile
-    else:
-        path = os.path.join(infile, filename)
+    print(bias)
     
-
-    header, data = find_header(path, header = '+BIAS/SOLUTION')
-
-    def _extract_elements(dat):
-        BIAS = dat[:5].strip()
-        version = dat[5:9].strip()
-        file_agency = dat[9:13].strip()
-        creation_time = dat[13:18].strip()
-        code = dat[18:28].strip()
-
-        return [BIAS, version, file_agency, 
-                creation_time, code] + dat[28:].split()
-
-
-    str_data =  [_extract_elements(num) for num in data]
-
-    names = ["bias", "svn", "prn", "site", 
-            "domes", "obs1", "obs2", "b_start", 
-            "b_end", "unit", "value", "std"]
-
-
-    df = pd.DataFrame(str_data, columns = names)
-
-    df[["value", "std"]] = df[["value", "std"]].apply(pd.to_numeric, 
-                                                      errors='coerce')
+main()
     
-    df.drop(columns = ["b_start", "b_end", "bias", "unit"], inplace = True)
-
-    return df
-
-
-
-
-
-def sat_bias_corrector(infile, prn = "G01"):
-    
-    dcb = load_dcb(infile)
-
-    value = float(dcb.loc[(dcb["obs2"] == "C2X") & 
-                          (dcb["prn"] == prn ),  "value"])
-
-    return ((-1 * value) * (const.c / pow(10, 9))) * const.factor_TEC
