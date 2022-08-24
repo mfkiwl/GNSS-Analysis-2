@@ -26,47 +26,42 @@ def separe_elements(dat):
     return [BIAS, version, file_agency, 
             creation_time, code] + dat[28:].split()
 
-def load_dcb(infile):
-    
-    with open(infile) as f:
-        data = [line.strip() for line in f.readlines()]
-
-    count = find_element(data, header = "*BIAS")
-
-    header = [i.replace("_", "").lower() for i in data[count:][0].split()]
-
-    data_result = []
-
-    for element in data[count + 1:]:
-        
-        if "-BIAS" in element:
-            break
-        else:
-            data_result.append(separe_elements(element))
-
-    return pd.DataFrame(data_result, columns = header)
-
-
-
-class load_cdb(object):
+class load_dcb(object):
     
     """Load and getting GNSS Differential Code Bias (DCBs) value"""
     
     def __init__(self, infile, prn = "G01"):
         
-        self.dcb = load_dcb(infile)
+        with open(infile) as f:
+            data = [line.strip() for line in f.readlines()]
+
+        header = "*BIAS"
+        count = find_element(data, header = header)
+        header = [i.replace("_", "").lower() for i in data[count:][0].split()]
+
+        data_result = []
+
+        for element in data[count + 1:]:
+
+            if "-BIAS" in element:
+                break
+            else:
+                data_result.append(separe_elements(element)) 
+
+        self.dcb = pd.DataFrame(data_result, columns = header)
         
         if prn[0] == "G":
             receiver_type = "C2X"
-    
+
 
         value = self.dcb.loc[(self.dcb["obs2"] == receiver_type) & 
                             (self.dcb["prn"] == prn),  "estimatedvalue"]
-        
-    
+
+
         self.value = float(value)
 
-        self.value_tec = ((-1 * self.value) * (const.c / pow(10, 9))) * const.factor_TEC
+        self.value_tec = ((-1 * self.value) * 
+                          (const.c / pow(10, 9))) * const.factor_TEC
         
         
 
@@ -74,10 +69,11 @@ class load_cdb(object):
 def main():
     infile = "Database/dcb/2014/CAS0MGXRAP_20140010000_01D_01D_DCB.BSX"
     infile = "CAS0MGXRAP_20220010000_01D_01D_DCB.BSX"
-    bias = load_cdb(infile).value_tec
+    #bias = load_dcb(infile)
     
+    df = load_dcb(infile).value_tec
     
-    print(bias)
+    print(df)
     
-main()
-    
+main() 
+        
