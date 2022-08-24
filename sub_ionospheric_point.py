@@ -187,7 +187,7 @@ def piercing_points_data(orbital_path: str,
 
     lon, lat, alt = convert_coords(ox, oy, oz)
 
-    result = { "lon": [], "lat": [], "el": []}
+    result = { "lon": [], "lat": [], "el": [], "proj": []}
     
     index = []
 
@@ -200,12 +200,16 @@ def piercing_points_data(orbital_path: str,
         ip = IonosphericPiercingPoint(sx, sy, sz, ox, oy, oz)
 
         elevation = ip.elevation(lat, lon)
+        
+        tec_proj = TEC_projection(elevation)
 
         lat_ip, lon_ip = ip.ionospheric_sub_point(lat, lon)
 
         result['lon'].append(lon_ip)
         result['lat'].append(lat_ip)
         result["el"].append(elevation)
+        result["proj"].append(tec_proj)
+        
         index.append(time)
 
     return pd.DataFrame(result, index = index)
