@@ -76,47 +76,11 @@ class load_orbits(object):
         
         return self.pos
     
-"""
-
-
-class load_orbits(object):
-    
-    Read orbit data (CDDIS Nasa)
-
-    def __init__(self, infile, prn = "G05"):
-
-
-        ob = gr.load(infile).to_dataframe()
-        
-        #print(ob)
-
-        self.ob = ob.loc[ob.index.get_level_values("sv") == prn, :]
-
-
-    def position(self, pos = "x"):
-        position = self.ob.loc[self.ob.index.get_level_values("ECEF") == pos, 
-                               ["position"]]
-        position.index = pd.to_datetime(position.index.get_level_values(0))
-        return position
-"""
-
     
     
-def join(receiver_path, orbital_path, first = "orbit"):
-     
-    rinex = load_receiver(receiver_path)
-    orbit = load_orbits(orbital_path)
-
-    if first == "rinex":
-        return rinex.join(orbit.reindex(orbit.index, level = 1))
-
-    else:
-        return orbit.join(rinex.reindex(rinex.index, level = 1))
-
-
-
-
 class observables(object):
+    
+    """Load observables from dataframe already processed"""
     
     def __init__(self, df, prn = None):
         
@@ -138,9 +102,6 @@ class observables(object):
         
         self.time = pd.to_datetime(obs.index.get_level_values('time'))
         
-
-
-
 
 
 def main():
