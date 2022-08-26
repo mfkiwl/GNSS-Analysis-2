@@ -1,7 +1,7 @@
 from sub_ionospheric_point import piercing_points_data
 from relative_tec_calculator import relative_tec_data
 from dcb_calculator import load_dcb
-        
+import pandas as pd
 
 
 
@@ -32,7 +32,7 @@ def process_data(path_tec: str,
     
     df["vTEC"] = df["proj"] * df["cTEC"]
     
-    df = df.dropna(subset = ["lat", "lon", "el"])
+    #df = df.dropna(subset = ["lat", "lon", "el"])
     
     df.columns.names = [prn]
     
@@ -41,36 +41,45 @@ def process_data(path_tec: str,
 
 
 
-def main():
+def run_for_all_prns():
+    # Arapiraca
+    #obs_x, obs_y, obs_z = 5043729.726, -3753105.556, -1072967.067
     
-    obs_x, obs_y, obs_z = 5043729.726, -3753105.556, -1072967.067
+    # Belo Horizonte
+    obs_x, obs_y, obs_z = 4320741.822, -4161560.476, -2161984.249
 
     obs = list((obs_x, obs_y, obs_z))
     
-    prn = "G01"
-    #path_tec = "Database/alar0011.14o.txt"
-    #path_orbit = "Database/jpl17733.sp3/igr17733.sp3"
-    #path_dcb = "Database/dcb/2014/CAS0MGXRAP_20140010000_01D_01D_DCB.BSX"
     
-    path_tec = "alar0011.22o.txt"
-    path_orbit = "igr21906.sp3"
-    path_dcb = "CAS0MGXRAP_20220010000_01D_01D_DCB.BSX"
-
+    path_tec = "Database/process/2015/mgbh1311.15o.txt"
+    path_orbit = "Database/orbit/2015/igr18441.sp3/igr18441.sp3"
+    path_dcb = "Database/dcb/2015/CAS0MGXRAP_20151310000_01D_01D_DCB.BSX"
     
-    sat_bias = load_dcb(path_dcb).value_tec
-
-    tecData = relative_tec_data(path_tec, prn = prn)
+    result = []
+    for num in range(1, 33):
+        if num < 10:
+            prn = f"G0{num}"
+        else:
+            prn = f"G{num}"
+       
   
-   
-    df = process_data(path_tec, 
-                       path_orbit, 
-                       path_dcb,
-                       obs, 
-                       prn)
+        try: 
+            df = process_data(path_tec, 
+                           path_orbit, 
+                           path_dcb,
+                           obs, 
+                           prn)
+            
+            df['prn'] = prn
+            df.set_index('prn', append=True, inplace=True)
+            result.append(df)
+        except:
+            continue
+            print(f"In {prn} doesnt work")
     
-    print(df)
+    return pd.concat(result)
     
 
-    df.to_csv("test.txt", sep = " ", index = True)
-    
-main()
+filename = "mgbh1311.15o"
+run_for_all_prns().to_csv(f"Database/all_process/2015/{filename}.txt", 
+                          sep = " ", index = True)
