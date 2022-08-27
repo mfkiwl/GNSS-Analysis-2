@@ -1,0 +1,58 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "fb7db36c",
+   "metadata": {},
+   "source": [
+    "# O GNSS (pipeline de dados)\n",
+    "\n",
+    "Este repositório tem como objetivo descrever o processamento de dados de GNSS a fim de obter mapas de TEC (conteúdo eletrônico total) da ionosfera. O TEC pode ser expresso pela integral do número de elétrons ao longo do caminho óptico entre o satélite e receptor, ou seja:\n",
+    "\n",
+    "$$ TEC = \\int_{\\text{receptor}}^{\\text{satélite}} N_e \\cdot ds$$\n",
+    "\n",
+    "## Ponto ionosférico (Ionospheric Piercing Point, IPP)\n",
+    "\n",
+    "\n",
+    "\n",
+    "## Detecção e remoção de ciclo de perda (Cycle-Slips)\n",
+    "\n",
+    "\n",
+    "## TEC relativo\n",
+    "\n",
+    "\n",
+    "## Removação de \"bias\" (Differential Code Bias, DCBs)\n",
+    "\n",
+    "\n",
+    "\n",
+    "\n",
+    "## Trajetórias dos satélites (PRNs)\n",
+    "\n",
+    "## Cálculo do ROTI\n",
+    "\n",
+    "### Detectando gaps"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.9.7"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
