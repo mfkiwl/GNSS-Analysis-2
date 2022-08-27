@@ -93,6 +93,8 @@ def date_from_doy(year: int, doy:int):
 
 def get_paths(year: int) -> tuple:
     
+    """Consctruct paths from year (only for my local repository)"""
+    
     tec = f"Database/process/{year}/"
     orbit = f"Database/orbit/{year}/"
     dcb = f"Database/dcb/{year}/"
@@ -106,5 +108,56 @@ def get_paths(year: int) -> tuple:
     return tuple(paths_out)
 
 year = 2022
-path_tec, path_orbit, path_dcb = get_paths(year)
+#path_tec, path_orbit, path_dcb = get_paths(year)
+
+
+class fname_attrs(object):
+    
+    """Attributes of filenames (rinex, orbit and bias)"""
+    
+    def __init__(self, fname):
         
+        extension = fname.split(".")
+        if extension[1][-1] == "o":
+        
+            self.station = extension[0][:4]
+            year = extension[1][:2]
+            doy = extension[0][4:7]
+
+            if int(year) < 99:
+                year = "20" + year
+            else:
+                year = "19" + year
+
+            self.year = int(year)
+            self.doy = int(doy)
+            
+        elif extension[1] == "sp3":
+            
+            self.const = extension[0][:3]
+            week = int(extension[0][3:7])
+            number = int(extension[0][7:])
+            
+            self.year, self.doy = doy_from_gpsweek(week, number)
+            
+        else:
+            args = extension[0].split("_")
+
+            if "MGX" in args[0]:
+                self.year = int(args[1][:4])
+                self.doy = int(args[1][4:7])
+                
+                
+        self.date = date_from_doy(self.year, self.doy)
+         
+    
+  
+
+def main():
+    f = "alar0011.22o"
+    f1 = "igr21906.sp3"
+    f2 = "CAS0MGXRAP_20220010000_01D_01D_DCB.BSX"
+    
+    
+    for fname in [f, f1, f2]:
+        print(fname_attrs(fname).date)
