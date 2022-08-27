@@ -1,16 +1,15 @@
 import gnsscal
 import datetime
 import numpy as np
+import os
 
-
-def julian_to_date(jd):
+def julian_to_date(jd:float) -> datetime.datetime:
+    
+    """Convert julian date to datetime format"""
 
     jd = jd + 0.5
-
     F, I = np.modf(jd)
-
     I = int(I)
-
     A = np.trunc((I - 1867216.25) / 36524.25)
 
     if I > 2299160:
@@ -66,10 +65,46 @@ def julian_to_date(jd):
     return datetime.datetime(int(year), int(month), int(day),
                              int(hour), int(minute), int(sec))
 
-day = datetime.date(2015, 5, 22)
 
-week, number = gnsscal.date2gpswd(day)
 
-year, doy = gnsscal.gpswd2yrdoy(week, number)
+        
 
-date = datetime.date(year, 1, 1) + datetime.timedelta(doy - 1)
+#date = datetime.date(year, month, day)
+
+def gpsweek_from_date(date: datetime.datetime) -> tuple:
+    
+    """Return GPS week and number from date"""
+
+    return gnsscal.date2gpswd(date)
+
+def doy_from_gpsweek(week: int, number: int) -> tuple:
+    
+    """Return year and doy from gps week"""
+
+    return gnsscal.gpswd2yrdoy(week, number)
+
+def date_from_doy(year: int, doy:int):
+    
+    """Return date from year and doy"""
+
+    return datetime.date(year, 1, 1) + datetime.timedelta(doy - 1)
+
+        
+
+def get_paths(year: int) -> tuple:
+    
+    tec = f"Database/process/{year}/"
+    orbit = f"Database/orbit/{year}/"
+    dcb = f"Database/dcb/{year}/"
+    
+    paths_out = []
+    for path in [tec, orbit, dcb]:
+        _, _, files = next(os.walk(path))
+        path += files[0]
+        paths_out.append(path)
+    
+    return tuple(paths_out)
+
+year = 2022
+path_tec, path_orbit, path_dcb = get_paths(year)
+        
