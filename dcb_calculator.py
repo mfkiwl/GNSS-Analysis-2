@@ -48,29 +48,39 @@ class load_dcb(object):
             else:
                 data_result.append(separe_elements(element)) 
 
-        self.dcb = pd.DataFrame(data_result, columns = header)
+        dcb = pd.DataFrame(data_result, columns = header)
+        
+        date = infile.split("_")[1]
+        
+        if int(date[:4]) == 2015:
+            obs1 = "C2C"
+        else:
+            obs1 = "C1C"
         
 
+        est_value = dcb.loc[(dcb["obs1"] == obs1) &
+                             (dcb["obs2"] == "C2W") &
+                             (dcb["prn"] == prn),  "estimatedvalue"]
 
-        estimated_value = self.dcb.loc[(self.dcb["obs1"] == "C1C") & 
-                             (self.dcb["obs2"] == "C2W") &
-                             (self.dcb["prn"] == prn),  "estimatedvalue"]
-
-
-        self.value = float(estimated_value)
+        self.value = float(est_value)
 
         self.value_tec = ((-1 * self.value) * 
                           (const.c / pow(10, 9))) * const.factor_TEC
+                          
+        @property                  
+        def data(self):
+            return dcb
         
         
 
 
 def main():
-    infile = "Database/dcb/2022/"
-    filename = "CAS0MGXRAP_20220010000_01D_01D_DCB.BSX"
+    infile = "Database/dcb/2015/CAS0MGXRAP_20151310000_01D_01D_DCB.BSX"
+    #filename = "CAS0MGXRAP_20220010000_01D_01D_DCB.BSX"
    
     prn = "G01"
-    df = load_dcb(infile + filename, prn = prn).value_tec
+    df = load_dcb(infile , prn = prn).value_tec   
+   
     print(df)
-main()
+#main()
 
