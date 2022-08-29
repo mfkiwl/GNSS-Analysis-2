@@ -91,24 +91,37 @@ def date_from_doy(year: int, doy:int):
 
         
 
-def get_paths(year: int) -> tuple:
+def get_paths(year: int, station: str) -> tuple:
     
-    """Consctruct paths from year (only for my local repository)"""
-    
-    tec = f"Database/process/{year}/"
-    orbit = f"Database/orbit/{year}/"
+    tec = f"Database/rinex/{year}/{station}/"
+    orbit = f"Database/orbit/{year}/igr/"
     dcb = f"Database/dcb/{year}/"
     
     paths_out = []
     for path in [tec, orbit, dcb]:
+        
         _, _, files = next(os.walk(path))
-        path += files[0]
+
+        for filename in files: 
+            
+            last_str = filename[-1] 
+            
+            rules = [last_str == "o", 
+                     last_str == "3",
+                     last_str == "X"]
+            
+            if any(rules):
+                path += filename
+
         paths_out.append(path)
-    
+        
     return tuple(paths_out)
 
-year = 2022
-#path_tec, path_orbit, path_dcb = get_paths(year)
+
+year = 2015
+path_tec, path_orbit, path_dcb = get_paths(year)
+
+print(path_tec, path_orbit, path_dcb)
 
 
 class fname_attrs(object):
@@ -159,5 +172,9 @@ def main():
     f2 = "CAS0MGXRAP_20220010000_01D_01D_DCB.BSX"
     
     
-    for fname in [f, f1, f2]:
-        print(fname_attrs(fname).date)
+    for x in [f, f1, f2]:
+        for y in [f, f1, f2]:
+            print(fname_attrs(x).date, fname_attrs(y).date)
+            
+            
+#main()
