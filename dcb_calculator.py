@@ -50,16 +50,14 @@ class load_dcb(object):
 
         self.dcb = pd.DataFrame(data_result, columns = header)
         
-        #if prn[0] == "G":
-         #   receiver_type = "C2W"
 
 
-        value = self.dcb.loc[(self.dcb["obs1"] == "C1C") & 
+        estimated_value = self.dcb.loc[(self.dcb["obs1"] == "C1C") & 
                              (self.dcb["obs2"] == "C2W") &
                              (self.dcb["prn"] == prn),  "estimatedvalue"]
 
 
-        self.value = float(value)
+        self.value = float(estimated_value)
 
         self.value_tec = ((-1 * self.value) * 
                           (const.c / pow(10, 9))) * const.factor_TEC
@@ -70,10 +68,9 @@ class load_dcb(object):
 def main():
     infile = "Database/dcb/2022/"
     filename = "CAS0MGXRAP_20220010000_01D_01D_DCB.BSX"
-    #bias = load_dcb(infile)
-    
-    df = load_dcb(infile + filename).value_tec
-    #print(df.loc[df.prn == "G01", ["prn", "estimatedvalue", "obs1", "obs2"]])
+   
+    prn = "G01"
+    df = load_dcb(infile + filename, prn = prn).value_tec
     print(df)
 main()
 
