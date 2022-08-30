@@ -66,11 +66,6 @@ def julian_to_date(jd:float) -> datetime.datetime:
                              int(hour), int(minute), int(sec))
 
 
-
-        
-
-#date = datetime.date(year, month, day)
-
 def gpsweek_from_date(date: datetime.datetime) -> tuple:
     
     """Return GPS week and number from date"""
@@ -91,38 +86,47 @@ def date_from_doy(year: int, doy:int):
 
         
 
-def get_paths(year: int, station: str) -> tuple:
+def get_paths(year: int, doy: int, station: str) -> tuple:
     
-    tec = f"Database/rinex/{year}/{station}/"
-    orbit = f"Database/orbit/{year}/igr/"
-    dcb = f"Database/dcb/{year}/"
+    """Construct paths from input values"""
+
+    date = date_from_doy(year, doy)
     
-    paths_out = []
-    for path in [tec, orbit, dcb]:
+    week, number = gpsweek_from_date(date)
+    
+    orbit = f"igr{week}{number}.sp3"
+    rinex = f"{station}{doy_str_format(doy)}.txt"
+    dcb = f"CAS0MGXRAP_{year}{doy_str_format(doy)}0000_01D_01D_DCB.BSX"
+    
+    
+    path_rinex = f"Database/process/{year}/{station}/"
+    path_orbit = f"Database/orbit/{year}/igr/"
+    path_dcb = f"Database/dcb/{year}/"
+    
+    path_out = [path_rinex + rinex, 
+                path_orbit + orbit, 
+                path_dcb + dcb]
+            
+    return tuple(path_out)
+
+
+def doy_str_format(date: int) -> str:
+    
+    if isinstance(date, datetime.datetime):
+        doy = date.timetuple().tm_yday
+    else:
+        doy = date
+    
+    if doy < 10:
+        str_doy = f"00{doy}"
         
-        _, _, files = next(os.walk(path))
+    elif doy >= 10 and doy < 100:
+        str_doy = f"0{doy}"
 
-        for filename in files: 
-            
-            last_str = filename[-1] 
-            
-            rules = [last_str == "o", 
-                     last_str == "3",
-                     last_str == "X"]
-            
-            if any(rules):
-                path += filename
-
-        paths_out.append(path)
+    else:
+        str_doy = f"{doy}"
         
-    return tuple(paths_out)
-
-
-year = 2015
-path_tec, path_orbit, path_dcb = get_paths(year)
-
-print(path_tec, path_orbit, path_dcb)
-
+    return  str_doy
 
 class fname_attrs(object):
     
@@ -167,14 +171,18 @@ class fname_attrs(object):
   
 
 def main():
-    f = "alar0011.22o"
-    f1 = "igr21906.sp3"
-    f2 = "CAS0MGXRAP_20220010000_01D_01D_DCB.BSX"
+
+    
+    year = 2014
+    station = "ceft"
+    doy = 1
+    
+   
     
     
-    for x in [f, f1, f2]:
-        for y in [f, f1, f2]:
-            print(fname_attrs(x).date, fname_attrs(y).date)
+    a, b, c = get_paths(year, doy, station)
+    
+    
+    print(a)
             
-            
-#main()
+main()
