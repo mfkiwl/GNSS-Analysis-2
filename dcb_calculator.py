@@ -4,7 +4,6 @@ from constants import constants as const
 import numpy as np
 
 def find_element(data, header):
-    
     """Find the header (like string) and the data body"""
     count = 0
     for num in range(len(data)):
@@ -16,7 +15,8 @@ def find_element(data, header):
 
 
 
-def separe_elements(dat):
+def separe_elements(dat: str) -> list:
+    """Separe elements from each row in dcb file"""
     BIAS = dat[:5].strip()
     version = dat[5:9].strip()
     file_agency = dat[9:13].strip()
@@ -27,7 +27,8 @@ def separe_elements(dat):
             creation_time, code] + dat[28:].split()
 
 
-def load_dcb(infile):
+def load_dcb(infile: str) -> pd.DataFrame:
+    """Pipeline of dcb into pandas dataframe"""
     
     with open(infile) as f:
         data = [line.strip() for line in f.readlines()]
@@ -48,19 +49,9 @@ def load_dcb(infile):
     return pd.DataFrame(data_result, columns = header)
 
 
-infile = "Database/dcb/2015/CAS0MGXRAP_20151310000_01D_01D_DCB.BSX"
-#filename = "CAS0MGXRAP_20220010000_01D_01D_DCB.BSX"
-   
-prn = "G02"
-
-
-
-
-#prns = np.unique(df.prn.values)
-
 
 def get_cdb_value(infile, prn):
-    
+    """Get dcb value from obs combination"""
     df = load_dcb(infile)
     
     try:
@@ -69,7 +60,10 @@ def get_cdb_value(infile, prn):
                      (df["prn"] == prn),  
                      "estimatedvalue"]    
         
-        value = float(est_value)
+        if len(est_value) == 0:
+            value = 0
+        else:
+            value = float(est_value)
         
     except:
         
@@ -80,13 +74,41 @@ def get_cdb_value(infile, prn):
         
         value = float(est_value)
         
-    else:
-        value = 0
+        if len(est_value) == 0:
+            value = 0
+        else:
+            value = float(est_value)
+        
         
         
     return ((-1 * value) * (const.c / pow(10, 9))) * const.factor_TEC
         
+  
+def create_prns(constellation:str = "G") -> list:
+    
+    """Create a prn list"""
+    
+    out = []    
+    for num in range(1, 33):
+        if num < 10:
+            prn = f"{constellation}0{num}"
+        else:
+            prn = f"{constellation}{num}"
+            
+        out.append(prn)
+        
+    return out
 
+infile = "Database/dcb/2015/CAS0MGXRAP_20151310000_01D_01D_DCB.BSX"
 
-
+def test():
+    
+    for prn in create_prns():
+        
+        df = load_dcb(infile)
+        
+        value = get_cdb_value(infile, prn)
+        
+        
+        print(f"{prn}: {value}")
     
