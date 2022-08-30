@@ -94,7 +94,9 @@ class IonosphericPiercingPoint(object):
         return meridional, zonal, vertical
     
     def zenital_angle(self, lat, lon):
+        
         """Zenital angle between satellite and receiver"""
+        
         meridional, zonal, vertical = self.relative_directions(lat, lon)
         
         arg_1 = pow(np.cos(lon) * np.cos(lat), 2)
@@ -106,12 +108,16 @@ class IonosphericPiercingPoint(object):
         return np.arccos(vertical / (r * vertical_norm))
     
     def elevation(self, lat, lon):
+        
         """Elevation angle fro zenital angle"""
+        
         zangle = self.zenital_angle(lat, lon)
         return ((np.pi / 2.0) - zangle) / const.dtor
     
     def azimuth(self, lat, lon):
+        
         """Azimuth angle from relative distances"""
+        
         meridional, zonal, vertical = self.relative_directions(lat, lon)
         azimuth_angle = np.arctan2(zonal, meridional)
         if azimuth_angle < 0:
@@ -119,7 +125,9 @@ class IonosphericPiercingPoint(object):
         return azimuth_angle #/ const.dtor
     
     def zenital_iono_angle(self, lat, lon):
+        
         """Zenital angle projection in the ionosphere"""
+        
         el = self.elevation(lat, lon) * const.dtor
         Re = const.radius_earth
         hm = const.avg_heigth
@@ -227,5 +235,3 @@ def main():
     
     df = piercing_points_data(path_orbit, obs, prn = prn)
     
-    print(df)
-main()
