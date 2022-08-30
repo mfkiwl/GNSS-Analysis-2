@@ -94,7 +94,8 @@ def run_for_many_files(year = 2014, station = "ceft"):
             doy = filename.replace(station, "").replace(endswith, "")[:-1]
             df = load_receiver(infile + filename, prn = None)
 
-            df.to_csv(f"Database/process/{year}/{station}/{station}{doy}.txt")
+            df.to_csv(f"Database/process/{year}/{station}/{station}{doy}.txt", 
+                      sep = " ", index = True)
     
 class observables(object):
     
