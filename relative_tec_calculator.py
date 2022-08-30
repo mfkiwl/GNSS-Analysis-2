@@ -80,7 +80,7 @@ def relative_tec_data(infile: str,
                         p2_values, rtec)
 
 
-    return pd.DataFrame({"rTEC": rtec}, index = time)
+    return pd.DataFrame({"stec": rtec}, index = time)
     
     
 def main():
