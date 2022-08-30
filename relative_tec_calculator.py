@@ -54,9 +54,12 @@ def relative_tec_data(infile: str,
     Read rinex pre-process files (already missing values removed), 
     correcter cycle-slip and compute the relative tec
     """
+    
     df = pd.read_csv(infile, 
-                     delim_whitespace=(True), 
-                     index_col = ["sv", "time"])
+                         delim_whitespace = True, 
+                         index_col = ["sv", "time"])
+
+        
     
     ob = observables(df, prn = prn)
 
@@ -83,12 +86,12 @@ def relative_tec_data(infile: str,
 def main():
     
     
-    infile = "alar0011.22o.txt"
+    infile = "Database/process/2014/ceft/ceft001.txt"
+    
+    
 
-    df = relative_tec_data(infile, 
-                      prn = "G01")    
+    df = pd.read_csv(infile, 
+                         delim_whitespace = True, 
+                         )
     
-    
-    print(df)
-    
-main()
+
