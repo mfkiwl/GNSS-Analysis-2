@@ -9,8 +9,11 @@ import georinex as gr
 import pandas as pd
 import numpy as np
 import datetime
+import os
 
 def load_receiver(receiver_path, prn = None):
+    
+    """Load RINEX file (receiver measurements)"""
 
     obs = gr.load(receiver_path, 
                   useindicators = True)
@@ -76,7 +79,22 @@ class load_orbits(object):
         
         return self.pos
     
+def run_for_many_files(year = 2014, station = "ceft"):
     
+    """Running for many files in directory"""
+    
+    endswith = f".{str(year)[-2:]}o"
+    
+    infile = f"Database/rinex/{year}/{station}/"
+
+    _, _, files = next(os.walk(infile))
+
+    for filename in files:
+        if filename.endswith(endswith):
+            doy = filename.replace(station, "").replace(endswith, "")[:-1]
+            df = load_receiver(infile + filename, prn = None)
+
+            df.to_csv(f"Database/process/{year}/{station}/{station}{doy}.txt")
     
 class observables(object):
     
