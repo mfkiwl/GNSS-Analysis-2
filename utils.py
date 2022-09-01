@@ -109,8 +109,24 @@ def get_paths(year: int, doy: int, station: str) -> tuple:
             
     return tuple(path_out)
 
+def create_prns(constellation: str = "G") -> list:
+    
+    """Create a prn list"""
+    
+    out = []    
+    for num in range(1, 33):
+        if num < 10:
+            prn = f"{constellation}0{num}"
+        else:
+            prn = f"{constellation}{num}"
+            
+        out.append(prn)
+        
+    return out
+
 
 def doy_str_format(date: int) -> str:
+    """Convert integer to string. Ex: 1 to 001"""
     
     if isinstance(date, datetime.datetime):
         doy = date.timetuple().tm_yday
@@ -177,12 +193,7 @@ def main():
     station = "ceft"
     doy = 1
     
-   
-    
-    
     a, b, c = get_paths(year, doy, station)
     
-    
-    print(a)
             
 main()
