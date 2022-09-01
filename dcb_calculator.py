@@ -7,12 +7,11 @@ def find_element(data, header):
     """Find the header (like string) and the data body"""
     count = 0
     for num in range(len(data)):
-        if (header) in data[num]:
+        if header in data[num]:
             break
         else:
             count += 1
     return count
-
 
 
 def separe_elements(dat: str) -> list:
@@ -78,37 +77,24 @@ def get_cdb_value(infile, prn):
             value = 0
         else:
             value = float(est_value)
-        
-        
-        
+            
     return ((-1 * value) * (const.c / pow(10, 9))) * const.factor_TEC
         
   
-def create_prns(constellation:str = "G") -> list:
-    
-    """Create a prn list"""
-    
-    out = []    
-    for num in range(1, 33):
-        if num < 10:
-            prn = f"{constellation}0{num}"
-        else:
-            prn = f"{constellation}{num}"
-            
-        out.append(prn)
-        
-    return out
+
 
 infile = "Database/dcb/2015/CAS0MGXRAP_20151310000_01D_01D_DCB.BSX"
 
-def test():
+def main():
     
     for prn in create_prns():
         
         df = load_dcb(infile)
         
+        
         value = get_cdb_value(infile, prn)
         
         
-        print(f"{prn}: {value}")
+        #print(f"{prn}: {value}")
     
+#test()
