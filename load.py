@@ -10,6 +10,7 @@ import pandas as pd
 import numpy as np
 import datetime
 import os
+from utils import doy_str_format
 
 def load_receiver(receiver_path, prn = None):
     
@@ -122,7 +123,17 @@ class observables(object):
         self.time = pd.to_datetime(obs.index.get_level_values('time'))
         
 
+def read_all_processed(year, doy, station):
+    
+    """Read all processed data (only for my local repository)"""
 
-def main():
-    receiver_path = "Database/alar0011/alar0011.14o"
-    orbital_path = "Database/jpl17733.sp3/igr17733.sp3"
+    filename  = f"{station}{doy_str_format(doy)}"
+
+    infile = f"Database/all_process/{year}/{station}/{filename}.txt"
+
+    df = pd.read_csv(infile, delim_whitespace = True)
+
+    df.index = pd.to_datetime(df.time)
+
+    return df
+
