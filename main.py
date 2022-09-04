@@ -1,17 +1,18 @@
 from sub_ionospheric_point import piercing_points_data
 from relative_tec_calculator import relative_tec_data
-from dcb_calculator import get_cdb_value, create_prns
+from dcb_calculator import get_cdb_value
 import pandas as pd
-from utils import get_paths, doy_str_format
+from utils import get_paths, doy_str_format, create_prns
 import time
-
+import json
+import os
 
 
 def process_data(year:int, 
                  doy: int,
-                 station:str,
+                 station: str,
                  obs: list,
-                 prn: str):
+                 prn: str) -> pd.DataFrame:
     
     """
     Concat the relative TEC for each piercing point 
@@ -35,18 +36,21 @@ def process_data(year:int,
     
     df["bias"] = sat_bias
     
+    df.columns.names = [station]
     
     return df
 
 
 
-def run_for_all_prns(year, station, obs, doy, save = True):
+def run_for_all_prns(year, doy, station, positions, save = True):
+    
+    """Run for all prns"""
 
     result = []
     
     for prn in create_prns():
         try: 
-            result.append(process_data(year, station, obs, prn))
+            result.append(process_data(year, doy, station, positions, prn))
         except:
             continue
             print(f"The {prn} doesnt work!")
@@ -54,8 +58,7 @@ def run_for_all_prns(year, station, obs, doy, save = True):
     df = pd.concat(result)
     
     if save:
-        filename = f"{station}{doy_str_format(doy)}"
-        df.to_csv(f"Database/all_process/{year}/{filename}.txt", 
+        df.to_csv(f"Database/all_process/{year}/{doy_str_format(doy)}/{station}.txt", 
                                   sep = " ", index = True)
     return df
 
@@ -63,35 +66,25 @@ def main():
     start_time = time.time()
     
     
-    # Arapiraca
-    #obs_x, obs_y, obs_z = 5043729.726, -3753105.556, -1072967.067
-    
-    # Belo Horizonte
-    #obs_x, obs_y, obs_z = 4320741.822, -4161560.476, -2161984.249
-    
-    # Fortaleza
-    
-    obs_x, obs_y, obs_z = 4983062.7560, -3959862.9020,  -410039.5900
-    
-    obs = list((obs_x, obs_y, obs_z))
+    json_path = open('Database/json/stations.json')
 
+    dat = json.load(json_path)
     
     year = 2014
-    station = "ceft"
     doy = 1
-    prn = "G01"
     
+    infile = f"Database/process/{year}/{doy_str_format(doy)}/"
+    _, _, files = next(os.walk(infile))
+    
+    
+    for filename in files:
+    
+        station = filename[:4]
+    
+        positions = dat[station]["position"]
    
-    df = process_data(year, 
-                     doy,
-                     station,
-                     obs,
-                     prn)
-    
-    print(df)
-    
-    #run_for_all_prns(year, station, obs, doy, save = True)
-    
+        df = run_for_all_prns(year, doy, station, positions, save = True)
+        print(df)
     
     print("--- %s seconds ---" % (time.time() - start_time))
     
