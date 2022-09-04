@@ -91,9 +91,11 @@ class load_orbits(object):
                                                          seconds = 30)
             start = self.pos.index[0]
             
-            self.pos = self.pos.reindex(pd.date_range(start = start, end = end, freq = interpol))
+            self.pos = self.pos.reindex(pd.date_range(start = start, 
+                                                      end = end, 
+                                                      freq = interpol))
 
-            self.pos = self.pos.interpolate(method='spline', order = 5)
+            self.pos = self.pos.interpolate(method = 'spline', order = 5)
             
             self.pos.columns.names = [self.prn]
         
@@ -116,7 +118,6 @@ def run_for_all_files(year, doy):
         rinex_path = os.path.join(infile, filename)
         pfilename = filename.replace(".14o", "")[:-1]    
         
-
         try:
 
             df, attrs = load_receiver(rinex_path)
@@ -183,6 +184,8 @@ def main():
     
     year = 2014
     doy = 1
-    path = 'Database/json/stations.json'
+    path_json = 'Database/json/stations.json'
     out_dict = run_for_all_files(year, doy)
-    save_attrs(path, out_dict)
+    save_attrs(path_json, out_dict)
+
+#main()

@@ -6,16 +6,7 @@ from ultis import doy_str_format
 import zipfile
 
 
-def create_directory(root, year, doy):
-    """Create folder by year and """
-    path = os.path.join(root, str(year), doy_str_format(doy))
-    try:
-        os.mkdir(path)
-        print(f"Creation of the directory {path} successfully")
-    except OSError:
-        print(f"Creation of the directory {path} failed")
-        
-    return path
+
 
 def unzipping(link, path, extension = ".14o"):
     """Extract files from zip"""

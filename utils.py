@@ -3,7 +3,7 @@ import datetime
 import numpy as np
 import os
 
-def julian_to_date(jd:float) -> datetime.datetime:
+def julian_to_date(jd: float) -> datetime.datetime:
     
     """Convert julian date to datetime format"""
 
@@ -99,7 +99,7 @@ def get_paths(year: int, doy: int, station: str) -> tuple:
     dcb = f"CAS0MGXRAP_{year}{doy_str_format(doy)}0000_01D_01D_DCB.BSX"
     
     
-    path_rinex = f"Database/process/{year}/{station}/"
+    path_rinex = f"Database/process/{year}/{doy_str_format(doy)}/"
     path_orbit = f"Database/orbit/{year}/igr/"
     path_dcb = f"Database/dcb/{year}/"
     
@@ -205,5 +205,4 @@ def main():
     
     a, b, c = get_paths(year, doy, station)
     
-            
-main()
+    print(a, b, c)        
