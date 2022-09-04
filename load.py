@@ -15,7 +15,7 @@ import json
 import ast
 
 def get_infos_from_rinex(ds):
-    
+    """Getting attributes from dataset"""
     position  = ds.attrs["position"]
     station = ds.attrs["filename"][:4]
     rxmodel = ds.attrs["rxmodel"]
@@ -101,6 +101,8 @@ class load_orbits(object):
     
 def run_for_all_files(year, doy):
     
+    """Processing all data for one single day"""
+    
     infile = f"Database/rinex/{year}/{doy_str_format(doy)}/"
 
     _, _, files = next(os.walk(infile))
@@ -130,6 +132,7 @@ def run_for_all_files(year, doy):
 
 
 def save_attrs(path, out_dict):
+    """Save attributes with json"""
     json_data = ast.literal_eval(json.dumps(out_dict))
     
     with open(path, 'w') as f:
@@ -175,3 +178,11 @@ def read_all_processed(year, doy, station):
 
     return df
 
+
+def main():
+    
+    year = 2014
+    doy = 1
+    path = 'Database/json/stations.json'
+    out_dict = run_for_all_files(year, doy)
+    save_attrs(path, out_dict)
