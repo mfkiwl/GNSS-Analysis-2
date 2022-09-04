@@ -10,21 +10,39 @@ import pandas as pd
 import numpy as np
 import datetime
 import os
-from utils import doy_str_format
+from utils import doy_str_format, create_directory
+import json 
+import ast
 
-def load_receiver(receiver_path, prn = None):
+def get_infos_from_rinex(ds):
+    
+    position  = ds.attrs["position"]
+    station = ds.attrs["filename"][:4]
+    rxmodel = ds.attrs["rxmodel"]
+    time_system = ds.attrs["time_system"]
+    version = ds.attrs["version"]
+
+
+    y = {}
+    x =  {"position": position, 
+         "rxmodel": rxmodel, 
+         "time_system": time_system, 
+         "version": version}
+
+    y[station] = x
+            
+    return y
+
+
+def load_receiver(receiver_path, attrs = True):
     
     """Load RINEX file (receiver measurements)"""
 
     obs = gr.load(receiver_path, 
                   useindicators = True)
-
-    if prn == None:
-        df = obs.to_dataframe()
-
-    else:
-        df = obs.sel(sv = prn).to_dataframe()
-
+    
+    df = obs.to_dataframe()
+    
     try:
         df = df.drop(columns = ["P1", "P2ssi", "P1ssi",
                                 "C1ssi", "L1ssi", "L2ssi"])
@@ -37,9 +55,10 @@ def load_receiver(receiver_path, prn = None):
 
     for col in ["L1lli", "L2lli"]:
         df.replace({col: {np.nan: 0}}, inplace = True)
-
-    return df
-
+    if attrs:
+        return df, get_infos_from_rinex(obs)
+    else:
+        return df
 
 class load_orbits(object):
     
@@ -80,23 +99,42 @@ class load_orbits(object):
         
         return self.pos
     
-def run_for_many_files(year = 2014, station = "ceft"):
+def run_for_all_files(year, doy):
     
-    """Running for many files in directory"""
-    
-    endswith = f".{str(year)[-2:]}o"
-    
-    infile = f"Database/rinex/{year}/{station}/"
+    infile = f"Database/rinex/{year}/{doy_str_format(doy)}/"
 
     _, _, files = next(os.walk(infile))
 
-    for filename in files:
-        if filename.endswith(endswith):
-            doy = filename.replace(station, "").replace(endswith, "")[:-1]
-            df = load_receiver(infile + filename, prn = None)
+    out_dict = {}
+    
+    path_out = create_directory("G://My Drive//Python//data-analysis//GNSS//Database//process//", year, doy)
 
-            df.to_csv(f"Database/process/{year}/{station}/{station}{doy}.txt", 
-                      sep = " ", index = True)
+    for filename in files:
+
+        rinex_path = os.path.join(infile, filename)
+        pfilename = filename.replace(".14o", "")[:-1]    
+        
+
+        try:
+
+            df, attrs = load_receiver(rinex_path)
+
+            df.to_csv(os.path.join(path_out, pfilename + ".txt"), 
+                          sep = " ", index = True)
+            out_dict.update(attrs)
+
+        except:
+            print(f"{filename} doesn't work")
+            continue
+    return out_dict
+
+
+def save_attrs(path, out_dict):
+    json_data = ast.literal_eval(json.dumps(out_dict))
+    
+    with open(path, 'w') as f:
+        json.dump(json_data, f)
+
     
 class observables(object):
     
