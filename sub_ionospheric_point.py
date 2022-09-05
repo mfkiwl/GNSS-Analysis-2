@@ -3,13 +3,15 @@ from pyproj import Transformer, CRS
 import numpy as np
 from load import *
 
-def convert_coords(obs_x, obs_y, obs_z):
+def convert_coords(obs_x, obs_y, obs_z, to_radians = True):
     
     """
     Converts cartezian to geodesic coordinates. 
     Just now, just for the receiver positions.
     The parameters must be in meters [m]
-    
+    >>> obs_x, obs_y, obs_z = 5043729.726, -3753105.556, -1072967.067
+    >>> print(convert_coords(obs_x, obs_y, obs_z))
+    ...-36.6534, -9.7492, 266.23012
     """
     
     crs_from = CRS(proj = 'geocent', ellps = 'WGS84', datum = 'WGS84')
@@ -23,11 +25,13 @@ def convert_coords(obs_x, obs_y, obs_z):
                                           zz = obs_z, 
                                           radians = False) 
     
-    
-    lon = np.radians(lon + 360) 
-    lat = np.radians(lat)
+    if to_radians:
+        lon = np.radians(lon + 360) 
+        lat = np.radians(lat)
     
     return lon, lat, alt
+
+
 
 
 class IonosphericPiercingPoint(object):
