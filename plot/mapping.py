@@ -15,12 +15,14 @@ def plotMapping(start_lat = -40,
                 start_lon = -80, 
                 end_lon = -20,
                 step_lat = 5, 
-                step_lon = 5):
+                step_lon = 5, 
+                xsize = 12, 
+                ysize = 10):
     
     """Plotting a map with cartopy"""
     
     
-    fig = plt.figure(figsize = (15, 12))
+    fig = plt.figure(figsize = (xsize, ysize))
     ax = plt.axes(projection = ccrs.PlateCarree())
     
     ax.set_global()
@@ -53,10 +55,6 @@ def plotMapping(start_lat = -40,
 
     return fig, ax
 
-'''
-Testar diferentes valores de dcb (para diferentes receptores)
-Comparar o valores de STEC e VTEC (Cosme)
-Exemplo da Carol
-'''
+
 
 
