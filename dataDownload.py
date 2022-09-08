@@ -2,7 +2,7 @@ import requests
 from bs4 import BeautifulSoup 
 import datetime
 import os
-from ultis import doy_str_format
+from ultis import doy_str_format, create_directory
 import zipfile
 
 
