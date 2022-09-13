@@ -1,5 +1,6 @@
 import sys
 from utils import *
+import os
 os.path.dirname(sys.executable)
 from pathlib import Path
 
@@ -23,7 +24,7 @@ class build_paths(object):
     
     @property
     def orbit(self):
-        return os.path.join(self.current_path, "orbit", self.const)
+        return os.path.join(self.current_path, "orbit", self.doy)
      
     @property
     def rinex(self):
@@ -49,9 +50,8 @@ class build_paths(object):
         fname =  f"{station}.txt"
         return  os.path.join(self.all_process, fname)
     
-    @property
     def fn_orbit(self):
-        fname = f"igr{self.week}{self.number}.sp3"
+        fname = f"{self.const}{self.week}{self.number}.sp3"
         return os.path.join(self.orbit, fname)
     
     def fn_rinex(self, station, extension = "14o"):
@@ -66,39 +66,18 @@ class build_paths(object):
     def json(self, fname = "stations.json"):
         return os.path.join(self.current_path, "json", fname)
     
-def get_paths(year: int, doy: int, station: str) -> tuple:
-    
-    """Construct paths from input values"""
 
-    date = date_from_doy(year, doy)
-    
-    week, number = gpsweek_from_date(date)
-    
-    orbit = f"igr{week}{number}.sp3"
-    rinex = f"{station}{doy_str_format(doy)}.txt"
-    
-    
-    
-    
-    path_process = path.process
-    path_orbit = f"Database/orbit/{year}/igr/"
-    path_dcb = f"Database/dcb/{year}/"
-    
-    path_out = [path_rinex + rinex, 
-                path_orbit + orbit, 
-                path_dcb + dcb]
-            
-    return tuple(path_out)
     
 def main():
     
-    year = 2014
+    year = 2022
     doy = 1
 
        
     path = build_paths(year, doy)
     
+    #print(path.fn_process("vico"))
     
-main()
+#main()
     
     
