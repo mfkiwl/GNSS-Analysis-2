@@ -8,11 +8,9 @@ from pathlib import Path
 
 class build_paths(object):
     
-    def __init__(self, year: int, doy: int, const: str = "igr"):
+    def __init__(self, year: int, doy: int):
         
         """Construct paths from input values"""
-        
-        self.const = const
         
         self.date = date_from_doy(year, doy)
         self.week, self.number = gpsweek_from_date(self.date)
@@ -24,7 +22,8 @@ class build_paths(object):
     
     @property
     def orbit(self):
-        return os.path.join(self.current_path, "orbit", self.doy)
+        return os.path.join(self.current_path, "orbit", 
+                            self.year, self.doy)
      
     @property
     def rinex(self):
@@ -50,8 +49,8 @@ class build_paths(object):
         fname =  f"{station}.txt"
         return  os.path.join(self.all_process, fname)
     
-    def fn_orbit(self):
-        fname = f"{self.const}{self.week}{self.number}.sp3"
+    def fn_orbit(self, const = "igr"):
+        fname = f"{const}{self.week}{self.number}.sp3"
         return os.path.join(self.orbit, fname)
     
     def fn_rinex(self, station, extension = "14o"):
