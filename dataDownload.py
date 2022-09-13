@@ -2,34 +2,47 @@ import requests
 from bs4 import BeautifulSoup 
 import datetime
 import os
-from ultis import doy_str_format, create_directory
+from utils import doy_str_format, create_directory
 import zipfile
+from build import build_paths
 
 
 
 
 def unzipping(link, path, extension = ".14o"):
-    """Extract files from zip"""
-    zip_path = os.path.join(path, link)
-    zip_file = zipfile.ZipFile(zip_path, 'r') 
     
-    for file in zip_file.namelist():
-        if file.endswith(extension):
-            zip_file.extract(file, path)
-            print(f"Extracting {file}")
-    zip_file.close()
-   
+    """Extract files from zip"""
+    
+    zip_path = os.path.join(path, link)
+    
+    try:
+        zip_file = zipfile.ZipFile(zip_path, 'r') 
+        
+        for file in zip_file.namelist():
+            if file.endswith(extension):
+                zip_file.extract(file, path)
+                print(f"Extracting {file}")
+            else:
+                print(f"Could not extract the {file}")
+                
+        zip_file.close()
+    except:
+        print("Bad zip file")
+    
     return zip_path
 
-def unzip_and_remove(links, complete_path):
+def unzip_and_remove(links, complete_path, delete = False, 
+                     extension = ".22d"):
     """Apply unzipping and try deleting"""
     for link in links:
         zip_path = unzipping(link, complete_path, 
-                             extension = ".14o")
-        try:
-            os.remove(zip_path)
-        except Exception:
-            print("Could not extract files")
+                             extension = extension)
+        print(f"Unzipping {link}")
+        if delete:
+            try:
+                os.remove(zip_path)
+            except Exception:
+                print("Could not deleting files")
             
             
 def data_download(year, doy, path = "", station = ".zip"):
@@ -61,14 +74,22 @@ def data_download(year, doy, path = "", station = ".zip"):
 
 def main():
     
-    rinex_path = "G:\\My Drive\\Python\\data-analysis\\GNSS\\Database\\rinex"
-    year = 2014
+    year = 2022
     doy = 1
     
     station = ".zip"
     
-    complete_path = create_directory(rinex_path, year, doy)
+    rinex_path = os.path.join(build_paths(year, doy).current_path, "rinex")
+        
+    #complete_path = create_directory(rinex_path, year, doy)
     
-    links = data_download(year, doy, path = complete_path, station = station)
+    #links = data_download(year, doy, 
+    #                      path = complete_path, 
+    #                      station = station)
     
-    unzip_and_remove(links, complete_path)
+    complete_path = build_paths(year, doy).rinex
+    _, _, files = next(os.walk(complete_path))
+     
+    unzip_and_remove(files, complete_path, delete = True, extension = ".22d")
+    
+main()
