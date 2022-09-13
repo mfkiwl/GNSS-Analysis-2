@@ -16,7 +16,7 @@ def process_data(year:int,
     
     """
     Concat the relative TEC for each piercing point 
-    and compute other variables
+    for one single PRN
     """
     path = build_paths(year, doy)
     
@@ -47,7 +47,7 @@ def process_data(year:int,
 
 def run_for_all_prns(year, doy, station, positions, save = True):
     
-    """Run for all prns"""
+    """Run for all prns and concat all files"""
 
     result = []
     
@@ -56,6 +56,7 @@ def run_for_all_prns(year, doy, station, positions, save = True):
     for prn in create_prns():
         try: 
             result.append(process_data(year, doy, station, positions, prn))
+            
         except:
             continue
             print(f"The {prn} doesnt work!")
@@ -67,12 +68,8 @@ def run_for_all_prns(year, doy, station, positions, save = True):
         
     return df
 
-def main():
-    start_time = time.time()
+def run_for_all_stations(year: int, doy: int):
     
-    
-    year = 2022
-    doy = 1
     ext = str(year)[-2:]
     
     path = build_paths(year, doy)
@@ -82,10 +79,8 @@ def main():
     dat = json.load(json_path)
     
     _, _, files = next(os.walk(path.process))
-    
-    files = files[:1]
-    
-    for num, filename in enumerate(files):
+        
+    for filename in files:
     
         station = filename[:4]
             
@@ -93,10 +88,17 @@ def main():
    
         df = run_for_all_prns(year, doy, station, positions, save = True)
         
-        #df = process_data(year, doy, station, positions, "G01")
-        print(df)
+        print(f"The station: {station} finishied")
     
-    print("--- %s seconds ---" % (time.time() - start_time))
     
+    
+def main():
+    
+   year = 2022
+   doy = 1
+   start_time = time.time()
+   run_for_all_stations(year, doy)
+   
+   print("--- %s seconds ---" % (time.time() - start_time))
 main()
 
