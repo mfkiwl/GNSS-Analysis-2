@@ -35,15 +35,15 @@ class build_paths(object):
         return os.path.join(self.current_path, "rinex", 
                             self.year, self.doy)
     
-    def fn_rinex(self, station):
-        fname = f"{station}{self.doy}1.14o"
+    def fn_rinex(self, station, extension = "14o"):
+        fname = f"{station}{self.doy}1.{extension}"
         return os.path.join(self.rinex, fname)
-    
-    def process(self, _all = True):
-        if _all:
-            return os.path.join(self.current_path, "all_process")
-        else:
-            return os.path.join(self.current_path, "process")
+    @property
+    def process(self):
+        return os.path.join(self.current_path, "process")
+    @property
+    def all_process(self):
+        return os.path.join(self.current_path, "all_process")
         
     def fn_process(self, _all = True):
         fname =  f"{station}.txt"
@@ -61,9 +61,9 @@ def main():
        
     path = build_paths(year, doy)
     
-    print(path.process(_all = False))
+    print(path.process)
     
     
-main()
+#main()
     
     
