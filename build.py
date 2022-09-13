@@ -19,6 +19,8 @@ class build_paths(object):
         
         self.year = str(year)
         self.doy = doy_str_format(doy)
+        self.ext_rinex = self.year[-2:]
+        
     
     @property
     def orbit(self):
@@ -40,6 +42,9 @@ class build_paths(object):
     @property
     def dcb(self):
         return os.path.join(self.current_path, "dcb", self.year)
+    @property
+    def json(self):
+        return os.path.join(self.current_path, "json", self.year)
     
     def fn_process(self, station = "alar"):
         fname =  f"{station}.txt"
@@ -53,17 +58,18 @@ class build_paths(object):
         fname = f"{const}{self.week}{self.number}.sp3"
         return os.path.join(self.orbit, fname)
     
-    def fn_rinex(self, station, extension = "14o"):
-        fname = f"{station}{self.doy}1.{extension}"
+    def fn_rinex(self, station = "alar"):
+        fname = f"{station}{self.doy}1.{self.ext_rinex}o"
         return os.path.join(self.rinex, fname)
     
     def fn_dcb(self, mgx = True):
         if mgx:
             fname = f"CAS0MGXRAP_{self.year}{self.doy}0000_01D_01D_DCB.BSX" 
             return os.path.join(self.dcb, fname)
-        
-    def json(self, fname = "stations.json"):
-        return os.path.join(self.current_path, "json", fname)
+    @property
+    def fn_json(self):
+        fname = f"{self.doy}.json"
+        return os.path.join(self.json, fname)
     
 
     
@@ -75,8 +81,8 @@ def main():
        
     path = build_paths(year, doy)
     
-    #print(path.fn_process("vico"))
+    print(path.ext_rinex)
     
-#main()
+main()
     
     
