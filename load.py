@@ -15,7 +15,7 @@ import json
 import ast
 
 def get_infos_from_rinex(ds):
-    """Getting attributes from dataset"""
+    """Getting attributes from dataset (netcdf file)"""
     position  = ds.attrs["position"]
     station = ds.attrs["filename"][:4]
     rxmodel = ds.attrs["rxmodel"]
@@ -34,26 +34,33 @@ def get_infos_from_rinex(ds):
     return y
 
 
-def load_receiver(receiver_path, attrs = True):
+def load_receiver(receiver_path,
+                  observables = ["L1", "L2", "C1", "P2"],
+                  lock_indicators = ["L1lli", "L2lli"],
+                  attrs = True
+                  ):
     
     """Load RINEX file (receiver measurements)"""
 
-    obs = gr.load(receiver_path, 
+    try:
+        obs = gr.load(receiver_path, 
                   useindicators = True)
     
-    df = obs.to_dataframe()
-    
-    try:
-        df = df.drop(columns = ["P1", "P2ssi", "P1ssi",
-                                "C1ssi", "L1ssi", "L2ssi"])
-
+        df = obs.to_dataframe()
+        
     except:
-        df = df.drop(columns = ["P2ssi", "C1ssi",
-                                "L1ssi", "L2ssi"])
+        obs = gr.load(receiver_path, 
+                  useindicators = True, 
+                      fast = False)
+        
+        df = obs.to_dataframe()
+        
+        
+    df = df.loc[:, observables + lock_indicators]
+    
+    df = df.dropna(subset = observables)
 
-    df = df.dropna(subset = ["L1", "L2", "C1", "P2"])
-
-    for col in ["L1lli", "L2lli"]:
+    for col in lock_indicators:
         df.replace({col: {np.nan: 0}}, inplace = True)
     if attrs:
         return df, get_infos_from_rinex(obs)
@@ -105,9 +112,9 @@ def run_for_all_files(year, doy):
     
     """Processing all data for one single day"""
     
-    infile = f"Database/rinex/{year}/{doy_str_format(doy)}/"
+    rinex_path = f"Database/rinex/{year}/{doy_str_format(doy)}/"
 
-    _, _, files = next(os.walk(infile))
+    _, _, files = next(os.walk(rinex_path))
 
     out_dict = {}
     
@@ -115,7 +122,7 @@ def run_for_all_files(year, doy):
 
     for filename in files:
 
-        rinex_path = os.path.join(infile, filename)
+        rinex_path = os.path.join(rinex_path, filename)
         pfilename = filename.replace(".14o", "")[:-1]    
         
         try:
