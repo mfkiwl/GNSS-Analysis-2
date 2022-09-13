@@ -13,9 +13,12 @@ import os
 from utils import doy_str_format, create_directory
 import json 
 import ast
+from build import build_paths
 
 def get_infos_from_rinex(ds):
+    
     """Getting attributes from dataset (netcdf file)"""
+    
     position  = ds.attrs["position"]
     station = ds.attrs["filename"][:4]
     rxmodel = ds.attrs["rxmodel"]
@@ -42,18 +45,12 @@ def load_receiver(receiver_path,
     
     """Load RINEX file (receiver measurements)"""
 
-    try:
-        obs = gr.load(receiver_path, 
-                  useindicators = True)
     
-        df = obs.to_dataframe()
-        
-    except:
-        obs = gr.load(receiver_path, 
-                  useindicators = True, 
-                      fast = False)
-        
-        df = obs.to_dataframe()
+    obs = gr.load(receiver_path, 
+              useindicators = True, 
+                  fast = False)
+    
+    df = obs.to_dataframe()
         
         
     df = df.loc[:, observables + lock_indicators]
@@ -108,50 +105,57 @@ class load_orbits(object):
         
         return self.pos
     
-def run_for_all_files(year, doy):
+def run_for_all_files(year: int, 
+                      doy: int, 
+                      extension: str = ".22o"):
     
     """Processing all data for one single day"""
     
-    rinex_path = f"Database/rinex/{year}/{doy_str_format(doy)}/"
-
+    path = build_paths(year, doy)
+    rinex_path = path.rinex
+    
     _, _, files = next(os.walk(rinex_path))
 
     out_dict = {}
     
-    path_out = create_directory("G://My Drive//Python//data-analysis//GNSS//Database//process//", year, doy)
+    path_process = create_directory(path.process, year, doy)
 
     for filename in files:
-
-        rinex_path = os.path.join(rinex_path, filename)
-        pfilename = filename.replace(".14o", "")[:-1]    
         
-        try:
+        
+        if filename.endswith(extension):
 
-            df, attrs = load_receiver(rinex_path)
-
-            df.to_csv(os.path.join(path_out, pfilename + ".txt"), 
-                          sep = " ", index = True)
-            out_dict.update(attrs)
-
-        except:
-            print(f"{filename} doesn't work")
-            continue
+            name_to_save = filename[:4]
+            
+            try:
+                df, attrs = load_receiver(os.path.join(rinex_path, filename))
+                
+    
+                df.to_csv(os.path.join(path_process, name_to_save + ".txt"), 
+                              sep = " ", index = True)
+                
+                out_dict.update(attrs)
+                print(f"{name_to_save} got it!")
+            except:
+                print(f"{name_to_save} doesn't work!")
+                continue
     return out_dict
 
 
-def save_attrs(path, out_dict):
-    """Save attributes with json"""
+def save_attrs(path: str, out_dict: dict):
+    """Save attributes in json file"""
     json_data = ast.literal_eval(json.dumps(out_dict))
     
     with open(path, 'w') as f:
         json.dump(json_data, f)
+        
 
     
 class observables(object):
     
     """Load observables from dataframe already processed"""
     
-    def __init__(self, df, prn = None):
+    def __init__(self, df: pd.DataFrame, prn = None):
         
         self.df = df 
         self.prns = np.unique(self.df.index.get_level_values('sv').values)
@@ -172,27 +176,29 @@ class observables(object):
         self.time = pd.to_datetime(obs.index.get_level_values('time'))
         
 
-def read_all_processed(year, doy, station):
+def read_all_processed(year: int, doy: int, station: str) -> pd.DataFrame:
     
     """Read all processed data (only for my local repository)"""
 
-    filename  = f"{station}{doy_str_format(doy)}"
+    filename  = f"{station}.txt"
 
-    infile = f"Database/all_process/{year}/{station}/{filename}.txt"
+    infile = build_paths(year, doy).all_process
 
-    df = pd.read_csv(infile, delim_whitespace = True)
+    df = pd.read_csv(infile + filename, 
+                     delim_whitespace = True, 
+                     index_col = "time")
 
-    df.index = pd.to_datetime(df.time)
+    df.index = pd.to_datetime(df.index)
 
     return df
 
 
 def main():
     
-    year = 2014
+    year = 2022
     doy = 1
-    path_json = 'Database/json/stations.json'
-    out_dict = run_for_all_files(year, doy)
+    path_json = 'Database/json/stations22.json'
+    out_dict = run_for_all_files(year, doy, extension = ".22o")
     save_attrs(path_json, out_dict)
-
-#main()
+    
+main()
