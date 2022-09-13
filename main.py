@@ -70,11 +70,10 @@ def run_for_all_prns(year, doy, station, positions, save = True):
 
 def run_for_all_stations(year: int, doy: int):
     
-    ext = str(year)[-2:]
-    
+    """Processed the data for all stations"""   
     path = build_paths(year, doy)
     
-    json_path = open(f'Database/json/stations{ext}.json')
+    json_path = open(path.fn_json)
 
     dat = json.load(json_path)
     
