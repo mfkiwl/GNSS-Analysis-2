@@ -7,45 +7,11 @@ import zipfile
 from build import build_paths
 
 
-
-
-def unzipping(link, path, extension = ".14o"):
-    
-    """Extract files from zip"""
-    
-    zip_path = os.path.join(path, link)
-    
-    try:
-        zip_file = zipfile.ZipFile(zip_path, 'r') 
-        
-        for file in zip_file.namelist():
-            if file.endswith(extension):
-                zip_file.extract(file, path)
-                print(f"Extracting {file}")
-            else:
-                print(f"Could not extract the {file}")
-                
-        zip_file.close()
-    except:
-        print("Bad zip file")
-    
-    return zip_path
-
-def unzip_and_remove(links, complete_path, delete = False, 
-                     extension = ".22d"):
-    """Apply unzipping and try deleting"""
-    for link in links:
-        zip_path = unzipping(link, complete_path, 
-                             extension = extension)
-        print(f"Unzipping {link}")
-        if delete:
-            try:
-                os.remove(zip_path)
-            except Exception:
-                print("Could not deleting files")
             
             
-def data_download(year, doy, path = "", station = ".zip"):
+def data_download(year:int, doy:int, 
+                  path_to_save = "", 
+                  extension = ".zip") -> list:
     """Download IBGE data"""
     
     url = f'https://geoftp.ibge.gov.br/informacoes_sobre_posicionamento_geodesico/rbmc/dados/{year}/{doy_str_format(doy)}/'
@@ -57,39 +23,81 @@ def data_download(year, doy, path = "", station = ".zip"):
 
     for link in s.find_all('a', href = True):
 
-        if station in link.text:
+        if extension in link.text:
             href = link['href']
             print(f"Downloading {href}")
             link_names.append(href)
+            
             remote_file = requests.get(url + href)
             total_length = int(remote_file.headers.get('content-length', 0))
             chunk_size = 1024
             
-            with open(os.path.join(path, href), 'wb') as f:
+            with open(os.path.join(path_to_save, href), 'wb') as f:
                 for chunk in remote_file.iter_content(chunk_size = chunk_size): 
                     if chunk: 
                         f.write(chunk) 
                         
     return link_names
 
+def create_directory(path_to_create: str):
+    """Create a new directory by path must be there year and doy"""
+    try:
+        os.mkdir(path_to_create)
+        print(f"Creation of the directory {path_to_create} successfully")
+    except OSError:
+        print(f"Creation of the directory {path_to_create} failed")
+    
+    return path_to_create
+
+def unzip_and_delete(files, year, path_to_save, delete = True):
+    
+    for filename in files:
+       
+        zip_path = os.path.join(path_to_save, filename)
+        ext_year = str(year)[-2:] 
+        
+        extensions = [ext_year + "o", ext_year + "d"]
+        
+        try:
+            zip_file = zipfile.ZipFile(zip_path, 'r') 
+            
+            for file in zip_file.namelist():
+                
+                if any(file.endswith(ext) for ext in extensions):
+                    zip_file.extract(file, path_to_save)
+                    print(f"Extracting... {file}")
+                else:
+                    pass
+    
+            zip_file.close()
+            if delete:
+                try:
+                    os.remove(zip_path)
+                except Exception:
+                    print("Could not deleting files")
+        except:
+            continue
+
 def main():
     
     year = 2022
     doy = 1
     
-    station = ".zip"
+    station = "alar"
+    path = build_paths(year, doy)
     
-    rinex_path = os.path.join(build_paths(year, doy).current_path, "rinex")
+    #new directory created
+    path_to_save = create_directory(path.rinex)
+    
+    path_to_save = ""
+    
+    files = data_download(year, doy, 
+                          path_to_save = path_to_save, 
+                          extension = station)
+    
+    
         
-    #complete_path = create_directory(rinex_path, year, doy)
-    
-    #links = data_download(year, doy, 
-    #                      path = complete_path, 
-    #                      station = station)
-    
-    complete_path = build_paths(year, doy).rinex
-    _, _, files = next(os.walk(complete_path))
-     
-    unzip_and_remove(files, complete_path, delete = True, extension = ".22d")
-    
+    unzip_and_delete(files, year, path_to_save, delete = True)
+        
+
 main()
