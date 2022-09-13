@@ -2,11 +2,11 @@ from sub_ionospheric_point import piercing_points_data
 from relative_tec_calculator import relative_tec_data
 from dcb_calculator import get_cdb_value
 import pandas as pd
-from utils import get_paths, doy_str_format, create_prns
+from utils import doy_str_format, create_prns
 import time
 import json
 import os
-
+from build import build_paths
 
 def process_data(year:int, 
                  doy: int,
@@ -18,8 +18,11 @@ def process_data(year:int,
     Concat the relative TEC for each piercing point 
     and compute other variables
     """
-
-    path_tec, path_orbit, path_dcb = get_paths(year, doy, station)
+    path = build_paths(year, doy)
+    
+    path_tec = path.fn_process(station)
+    path_orbit = path.fn_orbit()
+    path_dcb = path.fn_dcb()
      
     sat_bias = get_cdb_value(path_dcb, prn)
 
@@ -48,6 +51,8 @@ def run_for_all_prns(year, doy, station, positions, save = True):
 
     result = []
     
+    path_to_save = build_paths(year, doy).fn_all_process(station)
+    
     for prn in create_prns():
         try: 
             result.append(process_data(year, doy, station, positions, prn))
@@ -58,34 +63,40 @@ def run_for_all_prns(year, doy, station, positions, save = True):
     df = pd.concat(result)
     
     if save:
-        df.to_csv(f"Database/all_process/{year}/{doy_str_format(doy)}/{station}.txt", 
-                                  sep = " ", index = True)
+        df.to_csv(path_to_save, sep = " ", index = True)
+        
     return df
 
 def main():
     start_time = time.time()
     
     
-    json_path = open('Database/json/stations.json')
+    year = 2022
+    doy = 1
+    ext = str(year)[-2:]
+    
+    path = build_paths(year, doy)
+    
+    json_path = open(f'Database/json/stations{ext}.json')
 
     dat = json.load(json_path)
     
-    year = 2014
-    doy = 1
+    _, _, files = next(os.walk(path.process))
     
-    infile = f"Database/process/{year}/{doy_str_format(doy)}/"
-    _, _, files = next(os.walk(infile))
+    files = files[:1]
     
-    
-    for filename in files:
+    for num, filename in enumerate(files):
     
         station = filename[:4]
-    
+            
         positions = dat[station]["position"]
    
         df = run_for_all_prns(year, doy, station, positions, save = True)
+        
+        #df = process_data(year, doy, station, positions, "G01")
         print(df)
     
     print("--- %s seconds ---" % (time.time() - start_time))
     
 main()
+
