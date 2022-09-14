@@ -67,47 +67,18 @@ def julian_to_date(jd: float) -> datetime.datetime:
 
 
 def gpsweek_from_date(date: datetime.datetime) -> tuple:
-    
     """Return GPS week and number from date"""
-
     return gnsscal.date2gpswd(date)
 
 def doy_from_gpsweek(week: int, number: int) -> tuple:
-    
     """Return year and doy from gps week"""
-
     return gnsscal.gpswd2yrdoy(week, number)
 
-def date_from_doy(year: int, doy:int):
-    
+def date_from_doy(year: int, doy:int) -> datetime.datetime:
     """Return date from year and doy"""
-
     return datetime.date(year, 1, 1) + datetime.timedelta(doy - 1)
 
         
-
-def get_paths(year: int, doy: int, station: str) -> tuple:
-    
-    """Construct paths from input values"""
-
-    date = date_from_doy(year, doy)
-    
-    week, number = gpsweek_from_date(date)
-    
-    orbit = f"igr{week}{number}.sp3"
-    rinex = f"{station}{doy_str_format(doy)}.txt"
-    dcb = f"CAS0MGXRAP_{year}{doy_str_format(doy)}0000_01D_01D_DCB.BSX"
-    
-    
-    path_rinex = f"Database/process/{year}/{doy_str_format(doy)}/"
-    path_orbit = f"Database/orbit/{year}/igr/"
-    path_dcb = f"Database/dcb/{year}/"
-    
-    path_out = [path_rinex + rinex, 
-                path_orbit + orbit, 
-                path_dcb + dcb]
-            
-    return tuple(path_out)
 
 def create_prns(constellation: str = "G") -> list:
     
@@ -124,16 +95,15 @@ def create_prns(constellation: str = "G") -> list:
         
     return out
 
-def create_directory(root, year, doy):
-    """Create folder by year and """
-    path = os.path.join(root, str(year), doy_str_format(doy))
+def create_directory(path_to_create: str):
+    """Create a new directory by path must be there year and doy"""
     try:
-        os.mkdir(path)
-        print(f"Creation of the directory {path} successfully")
+        os.mkdir(path_to_create)
+        print(f"Creation of the directory {path_to_create} successfully")
     except OSError:
-        print(f"Creation of the directory {path} failed")
-        
-    return path
+        print(f"Creation of the directory {path_to_create} failed")
+    
+    return path_to_create
 
 def doy_str_format(date: int) -> str:
     """Convert integer to string. Ex: 1 to 001"""
@@ -195,14 +165,3 @@ class fname_attrs(object):
          
     
   
-
-def main():
-
-    
-    year = 2014
-    station = "ceft"
-    doy = 1
-    
-    a, b, c = get_paths(year, doy, station)
-    
-    print(a, b, c)        
