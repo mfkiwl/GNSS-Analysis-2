@@ -118,7 +118,7 @@ def run_for_all_files(year: int,
 
     out_dict = {}
     
-    path_process = create_directory(path.process, year, doy)
+    path_process = create_directory(path.process)
 
     for filename in files:
         
@@ -196,9 +196,11 @@ def read_all_processed(year: int, doy: int, station: str) -> pd.DataFrame:
 def main():
     
     year = 2022
-    doy = 1
-    path_json = 'Database/json/stations22.json'
-    out_dict = run_for_all_files(year, doy, extension = ".22o")
-    save_attrs(path_json, out_dict)
+    for doy in range(2, 5): 
+        path = build_paths(year, doy)
+        path_json = path.fn_json
+
+        out_dict = run_for_all_files(year, doy, extension = ".22o")
+        save_attrs(path_json, out_dict)
     
 main()
