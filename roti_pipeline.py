@@ -1,6 +1,6 @@
 from build import build_paths
 from ROTI import rot_and_roti
-from tecmap import *
+from tecmap import MapMaker
 import os
 import pandas as pd
 from utils import create_prns
@@ -8,7 +8,10 @@ import datetime
 
 
     
-def compute_roti_for_all_stations(year, doy, delta = '2.5min'):
+def compute_roti_for_all_stations(year, 
+                                  doy, 
+                                  delta = '2.5min', 
+                                  elevation = 30):
     
     infile = build_paths(year, doy).all_process
 
@@ -29,7 +32,7 @@ def compute_roti_for_all_stations(year, doy, delta = '2.5min'):
 
         for prn in create_prns():
             try:
-                prn_el = df.loc[(df.prn == prn) & (df.el > 30), :]
+                prn_el = df.loc[(df.prn == prn) & (df.el > elevation), :]
 
                 dtec = prn_el["stec"] - prn_el["stec"].rolling(delta).mean()
                 time = prn_el.index
@@ -44,15 +47,16 @@ def compute_roti_for_all_stations(year, doy, delta = '2.5min'):
                 
                 result.append(pd.concat([roti_df, coords], axis = 1))
             except:
-                print(f"PRN: {prn} doesn`t works.")
                 continue
+            
+        print(f"Station {filename[:4]} processed correctly")
 
     return pd.concat(result)
 
 
-def make_maps(year, doy, hour, minute):
+def make_maps(ds, hour, minute):
     """Separe the data in specifics time range for construct the TEC MAP"""
-    ds = compute_roti_for_all_stations(year, doy)
+    
 
     dt = ds.index[0].date()
 
@@ -80,8 +84,7 @@ def main():
     hour = 0
     minute = 0
 
-    tecmap = make_maps(year, doy, hour, minute)
+    ds = compute_roti_for_all_stations(year, doy)   
+    tecmap = make_maps(ds, hour, minute)
     
-    print(tecmap)
     
-main()
