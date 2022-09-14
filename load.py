@@ -17,7 +17,7 @@ from build import build_paths
 
 def get_infos_from_rinex(ds):
     
-    """Getting attributes from dataset (netcdf file)"""
+    """Getting attributes from dataset (netcdf file) into dictonary"""
     
     position  = ds.attrs["position"]
     station = ds.attrs["filename"][:4]
@@ -28,20 +28,19 @@ def get_infos_from_rinex(ds):
 
     y = {}
     x =  {"position": position, 
-         "rxmodel": rxmodel, 
-         "time_system": time_system, 
-         "version": version}
+          "rxmodel": rxmodel, 
+          "time_system": time_system, 
+          "version": version}
 
     y[station] = x
             
     return y
 
 
-def load_receiver(receiver_path,
-                  observables = ["L1", "L2", "C1", "P2"],
-                  lock_indicators = ["L1lli", "L2lli"],
-                  attrs = True
-                  ):
+def load_receiver(receiver_path: str,
+                  observables: list = ["L1", "L2", "C1", "P2"],
+                  lock_indicators: list = ["L1lli", "L2lli"],
+                  attrs: bool = True):
     
     """Load RINEX file (receiver measurements)"""
 
@@ -59,6 +58,7 @@ def load_receiver(receiver_path,
 
     for col in lock_indicators:
         df.replace({col: {np.nan: 0}}, inplace = True)
+        
     if attrs:
         return df, get_infos_from_rinex(obs)
     else:
@@ -66,7 +66,7 @@ def load_receiver(receiver_path,
 
 class load_orbits(object):
     
-    """Read orbit data (CDDIS Nasa)"""
+    """Read orbit data (CDDIS Nasa) with interpolation method"""
 
     def __init__(self, orbital_path, prn = "G01"):
         
@@ -176,7 +176,9 @@ class observables(object):
         self.time = pd.to_datetime(obs.index.get_level_values('time'))
         
 
-def read_all_processed(year: int, doy: int, station: str) -> pd.DataFrame:
+def read_all_processed(year: int, 
+                       doy: int, 
+                       station: str) -> pd.DataFrame:
     
     """Read all processed data (only for my local repository)"""
 
@@ -203,4 +205,3 @@ def main():
         out_dict = run_for_all_files(year, doy, extension = ".22o")
         save_attrs(path_json, out_dict)
     
-main()

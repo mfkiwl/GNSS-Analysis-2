@@ -82,6 +82,5 @@ def main():
     path = build_paths(year, doy)
     
     print(path.process)
-    
-main()    
+
     

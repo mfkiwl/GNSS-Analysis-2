@@ -2,7 +2,7 @@ from sub_ionospheric_point import piercing_points_data
 from relative_tec_calculator import relative_tec_data
 from dcb_calculator import get_cdb_value
 import pandas as pd
-from utils import doy_str_format, create_prns
+from utils import create_prns, create_directory
 import time
 import json
 import os
@@ -45,9 +45,13 @@ def process_data(year:int,
 
 
 
-def run_for_all_prns(year, doy, station, positions, save = True):
+def run_for_all_prns(year: int, 
+                     doy: int, 
+                     station: str, 
+                     positions: list, 
+                     save: bool = True) -> pd.DataFrame:
     
-    """Run for all prns and concat all files"""
+    """Run for all prns and concatenate them"""
 
     result = []
     
@@ -56,10 +60,10 @@ def run_for_all_prns(year, doy, station, positions, save = True):
     for prn in create_prns():
         try: 
             result.append(process_data(year, doy, station, positions, prn))
-            
         except:
-            continue
             print(f"The {prn} doesnt work!")
+            continue
+            
     
     df = pd.concat(result)
     
@@ -72,6 +76,8 @@ def run_for_all_stations(year: int, doy: int):
     
     """Processed the data for all stations"""   
     path = build_paths(year, doy)
+    
+    path_created = create_directory(path.all_process)
     
     json_path = open(path.fn_json)
 
@@ -93,10 +99,12 @@ def run_for_all_stations(year: int, doy: int):
     
 def main():
     
-   year = 2022
-   doy = 1
    start_time = time.time()
-   run_for_all_stations(year, doy)
+    
+   year = 2022
+   
+   for doy in range(2, 5):
+       run_for_all_stations(year, doy)
    
    print("--- %s seconds ---" % (time.time() - start_time))
 main()
