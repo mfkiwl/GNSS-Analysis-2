@@ -81,8 +81,7 @@ def main():
        
     path = build_paths(year, doy)
     
-    print(path.ext_rinex)
+    print(path.process)
     
-main()
-    
+main()    
     
