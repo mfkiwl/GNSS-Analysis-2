@@ -2,7 +2,7 @@ import requests
 from bs4 import BeautifulSoup 
 import datetime
 import os
-from utils import doy_str_format, create_directory
+from utils import doy_str_format
 import zipfile
 from build import build_paths
 
@@ -25,7 +25,7 @@ def data_download(year:int, doy:int,
 
         if extension in link.text:
             href = link['href']
-            print(f"Downloading {href}")
+            print(f"Downloading... {href}")
             link_names.append(href)
             
             remote_file = requests.get(url + href)
@@ -39,15 +39,7 @@ def data_download(year:int, doy:int,
                         
     return link_names
 
-def create_directory(path_to_create: str):
-    """Create a new directory by path must be there year and doy"""
-    try:
-        os.mkdir(path_to_create)
-        print(f"Creation of the directory {path_to_create} successfully")
-    except OSError:
-        print(f"Creation of the directory {path_to_create} failed")
-    
-    return path_to_create
+
 
 def unzip_and_delete(files, year, path_to_save, delete = True):
     
@@ -81,23 +73,23 @@ def unzip_and_delete(files, year, path_to_save, delete = True):
 def main():
     
     year = 2022
-    doy = 1
+    #doy = 1
     
-    station = "alar"
-    path = build_paths(year, doy)
-    
-    #new directory created
-    path_to_save = create_directory(path.rinex)
-    
-    path_to_save = ""
-    
-    files = data_download(year, doy, 
-                          path_to_save = path_to_save, 
-                          extension = station)
-    
-    
+    for doy in range(2, 5):
+        station = ".zip"
+        path = build_paths(year, doy)
         
-    unzip_and_delete(files, year, path_to_save, delete = True)
+        #new directory created
+        path_to_save = create_directory(path.rinex)
+        
+        
+        files = data_download(year, doy, 
+                              path_to_save = path_to_save, 
+                              extension = station)
+        
+        
+            
+        unzip_and_delete(files, year, path_to_save, delete = True)
         
 
 main()
