@@ -12,7 +12,8 @@ def process_data(year:int,
                  doy: int,
                  station: str,
                  obs: list,
-                 prn: str) -> pd.DataFrame:
+                 prn: str, 
+                 use_dcb: bool = False) -> pd.DataFrame:
     
     """
     Concat the relative TEC for each piercing point 
@@ -22,23 +23,22 @@ def process_data(year:int,
     
     path_tec = path.fn_process(station)
     path_orbit = path.fn_orbit()
-    path_dcb = path.fn_dcb()
-     
-    sat_bias = get_cdb_value(path_dcb, prn)
-
-    tecData = relative_tec_data(path_tec, prn = prn)
-      
-    ippData = piercing_points_data(path_orbit, obs, prn = prn)
     
-    df = tecData.join(ippData).interpolate(method = 
-                                           'nearest').ffill().bfill()
+    tec = relative_tec_data(path_tec, prn = prn)
+      
+    ipp = piercing_points_data(path_orbit, obs, prn = prn)
+    
+    if use_dcb:
+        path_dcb = path.fn_dcb()
+             
+        tec["bias"] = get_cdb_value(path_dcb, prn)
+
+    df = tec.join(ipp).interpolate(method ='nearest').ffill().bfill()
     
     df["vtec"] = df["proj"] * df["stec"]
     
     df['prn'] = prn
-    
-    df["bias"] = sat_bias
-    
+        
     df.columns.names = [station]
     
     return df
