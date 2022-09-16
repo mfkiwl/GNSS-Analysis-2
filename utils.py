@@ -105,6 +105,19 @@ def create_directory(path_to_create: str):
     
     return path_to_create
 
+
+def delete_files(infile, extension = ".22d"):
+    
+    """Deleting files"""
+    _, _, files = next(os.walk(infile))
+    
+    for filename in files:
+        if filename.endswith(extension):
+            try:
+                os.remove(os.path.join(infile, filename))
+            except Exception:
+                print(f"Could not delete {filename}")
+
 def doy_str_format(date: int) -> str:
     """Convert integer to string. Ex: 1 to 001"""
     
