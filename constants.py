@@ -1,10 +1,3 @@
-"""
-Created on Wed Aug 10 15:29:00 2022
-
-@author: Luiz
-
-"""
-
 class constants(object):
     
     """Contants used in the GNSS routines"""
