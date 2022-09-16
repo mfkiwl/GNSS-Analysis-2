@@ -40,18 +40,19 @@ def get_infos_from_rinex(ds):
 def load_receiver(receiver_path: str,
                   observables: list = ["L1", "L2", "C1", "P2"],
                   lock_indicators: list = ["L1lli", "L2lli"],
-                  attrs: bool = True):
+                  attrs: bool = True, 
+                  fast: bool = False):
     
     """Load RINEX file (receiver measurements)"""
 
     
     obs = gr.load(receiver_path, 
-              useindicators = True, 
-                  fast = False)
+                  useindicators = True, 
+                  fast = fast)
     
     df = obs.to_dataframe()
-        
-        
+    
+    
     df = df.loc[:, observables + lock_indicators]
     
     df = df.dropna(subset = observables)
@@ -105,9 +106,7 @@ class load_orbits(object):
         
         return self.pos
     
-def run_for_all_files(year: int, 
-                      doy: int, 
-                      extension: str = ".22o"):
+def run_for_all_files(year: int, doy: int):
     
     """Processing all data for one single day"""
     
@@ -118,21 +117,22 @@ def run_for_all_files(year: int,
 
     out_dict = {}
     
+    year_extension = str(year)[-2:] + "o"
+    
     path_process = create_directory(path.process)
 
     for filename in files:
         
         
-        if filename.endswith(extension):
+        if filename.endswith(year_extension):
 
             name_to_save = filename[:4]
             
             try:
                 df, attrs = load_receiver(os.path.join(rinex_path, filename))
                 
-    
-                df.to_csv(os.path.join(path_process, name_to_save + ".txt"), 
-                              sep = " ", index = True)
+                path_to_save = os.path.join(path_process, name_to_save + ".txt")
+                df.to_csv(path_to_save, sep = " ", index = True)
                 
                 out_dict.update(attrs)
                 print(f"{name_to_save} got it!")
@@ -194,14 +194,3 @@ def read_all_processed(year: int,
 
     return df
 
-
-def main():
-    
-    year = 2022
-    for doy in range(2, 5): 
-        path = build_paths(year, doy)
-        path_json = path.fn_json
-
-        out_dict = run_for_all_files(year, doy, extension = ".22o")
-        save_attrs(path_json, out_dict)
-    
