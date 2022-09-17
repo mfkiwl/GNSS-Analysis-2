@@ -1,14 +1,19 @@
 from constants import *
 import datetime
 import numpy as np
-from load import *
+from load import observables
+import pandas as pd
+from build import build_paths
 
-        
+
 def correct_phases(RTEC, MWLC, 
                    l1_values, l2_values, 
-                   c1_values, p2_values, i):
+                   c1_values, p2_values, 
+                   i, prn):
     
     const = constants()
+    F1, F2 = const.frequency(prn)
+    
     
     l1 = l1_values[i]
     l2 = l2_values[i]
@@ -19,7 +24,7 @@ def correct_phases(RTEC, MWLC,
     diff_mwlc = MWLC[i] - MWLC[i - 1]
     
     diff_2 = np.round((diff_tec - (diff_mwlc * const.c 
-                                   / const.F1)) * const.factor_mw)
+                                   / F1)) * const.factor_mw(prn))
     
     
     diff_1 = diff_2 + np.round(diff_mwlc)
@@ -27,8 +32,8 @@ def correct_phases(RTEC, MWLC,
     corr_1 = l1 - diff_1
     corr_2 = l2 - diff_2
     
-    RTEC[i] = ((corr_1 / const.F1) - (corr_2 / const.F2)) * const.c
-    MWLC[i] = ((corr_1 - corr_2) - (const.F1 * c1 + const.F2 * p2) * const.factor)
+    RTEC[i] = ((corr_1 / F1) - (corr_2 / F2)) * const.c
+    MWLC[i] = ((corr_1 - corr_2) - (F1 * c1 + F2 * p2) * const.factor(prn))
     
     for num in range(i, len(l1_values)):
         
@@ -38,15 +43,31 @@ def correct_phases(RTEC, MWLC,
     return l1_values, l2_values
 
 
-def cycle_slip_corrector(time, l1_values, l2_values, 
-                         c1_values, p2_values, 
-                         l1lli_values, l2lli_values):
+def cycle_slip_corrector(df, prn, DIFF_TEC_MAX = 0.05):
     
-  
+    """Cycle slip correction for each prn"""
+    ob = observables(df, prn = prn)
+
+    # phases carriers
+    l1_values = ob.l1
+    l2_values = ob.l2
+
+    # Loss Lock Indicator
+    l1lli_values, l2lli_values = ob.l1lli, ob.l2lli
+
+    # Pseudoranges
+    c1_values, p2_values = ob.c1, ob.p2
+
+    # time
+    time = ob.time
+    
+    pdev = DIFF_TEC_MAX * 4.0
+    
     const = constants()
     index_start = 0
     size = 10
     
+    F1, F2 = const.frequency(prn)
     
     RTEC = np.zeros(len(time)) # TEC relativo
     MWLC = np.zeros(len(time)) # Combinação linear Melbourne–Wübbena
@@ -60,13 +81,12 @@ def cycle_slip_corrector(time, l1_values, l2_values,
         p2 = p2_values[index]
         
         
-        RTEC[index] = ((l1 / const.F1) - (l2 /  const.F2)) * const.c
+        RTEC[index] = ((l1 / F1) - (l2 /  F2)) * const.c
         
         # Compute the Melbourne-Wubbena
-        MWLC[index] = ((l1 - l2) - (const.F1 * c1 +  const.F2 * p2) * const.factor)
+        MWLC[index] = ((l1 - l2) - (F1 * c1 + F2 * p2) * const.factor(prn))
         
-
-        # Se encontrar o gap comece o index_start
+        # Se encontrar o gap de 15 minutos inicie o "index_start"
         
         if (time[index] - time[index - 1] > datetime.timedelta(minutes = 15)):
             index_start = index
@@ -80,10 +100,10 @@ def cycle_slip_corrector(time, l1_values, l2_values,
             l1_values, l2_values = correct_phases(RTEC, MWLC, 
                                                   l1_values, l2_values, 
                                                   c1_values, p2_values, 
-                                                  index)
+                                                  index, prn)
             
         pmean = 0.0
-        pdev = const.DIFF_TEC_MAX * 4.0
+        pdev = DIFF_TEC_MAX * 4.0
         
         if index - index_start + 1 >= 12:
             
@@ -99,7 +119,7 @@ def cycle_slip_corrector(time, l1_values, l2_values,
             pmean = add_tec / size
             
             pdev = max(np.sqrt(add_tec_2 / size - np.power(pmean, 2)), 
-                       const.DIFF_TEC_MAX)
+                       DIFF_TEC_MAX)
             
         pmin_tec = pmean - pdev * 5.0
         pmax_tec = pmean + pdev * 5.0
@@ -114,39 +134,27 @@ def cycle_slip_corrector(time, l1_values, l2_values,
                                                   index)
 
             
-    return l1_values, l2_values, RTEC
+    return c1_values, p2_values, RTEC
 
 
 
 def main():
     
-    filename = "alar0011.14o"
+    station = "alar001"
+    year = 2014
+    doy = 1
+    
+    path = build_paths(year, doy).fn_process(station)
 
-    df = pd.read_csv(f"Database/{filename}.txt", 
-                     delim_whitespace = (True), 
-                     index_col = ["sv", "time"])
-
-
-
-    ob = observables(df, prn = "G01")
-
-
-    # phases carriers
-    l1_values = ob.l1
-    l2_values = ob.l2
-
-    # Loss Lock Indicator
-    l1lli_values, l2lli_values = ob.l1lli, ob.l2lli
-
-    # Pseudoranges
-    c1_values, p2_values = ob.c1, ob.p2
-
-    # time
-    time = ob.time
+    df = pd.read_csv(path, delim_whitespace = True, index_col = ["sv", "time"])
+    
+    arr = np.array(df.index.get_level_values("sv"))
+    
+    print(np.unique(arr))
+    #prn = "G01"
     
     
-    l1, l2, rtec = cycle_slip_corrector(time, l1_values, l2_values, 
-                                        c1_values, p2_values, 
-                                        l1lli_values, l2lli_values)
+    
+    #l1, l2, rtec = cycle_slip_corrector(df, ob, prn)
     
 main()
