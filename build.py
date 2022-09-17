@@ -8,14 +8,14 @@ from pathlib import Path
 
 class build_paths(object):
     
-    def __init__(self, year: int, doy: int):
+    def __init__(self, year: int, doy: int, root = str(Path.cwd())):
         
-        """Construct paths from input values"""
+        """Construct file paths from input date (year and doy)"""
         
         self.date = date_from_doy(year, doy)
         self.week, self.number = gpsweek_from_date(self.date)
         
-        self.current_path = os.path.join(str(Path.cwd()), "Database")
+        self.current_path = os.path.join(root, "Database")
         
         self.year = str(year)
         self.doy = doy_str_format(doy)
@@ -46,6 +46,12 @@ class build_paths(object):
     def json(self):
         return os.path.join(self.current_path, "json", self.year)
     
+    @property
+    def fn_json(self):
+        fname = f"{self.doy}.json"
+        return os.path.join(self.json, fname)
+    
+    
     def fn_process(self, station = "alar"):
         fname =  f"{station}.txt"
         return  os.path.join(self.process, fname)
@@ -66,21 +72,28 @@ class build_paths(object):
         if mgx:
             fname = f"CAS0MGXRAP_{self.year}{self.doy}0000_01D_01D_DCB.BSX" 
             return os.path.join(self.dcb, fname)
+    
+    
+
+class prns:
+    """Creating a prn list for each constellation"""
+    
+    def __init__(self):
+        pass
+    @staticmethod
+    def format_prn(constelation, num):
+        if num < 10:
+            prn = f"{constelation}0{num}"
+        else:
+            prn = f"{constelation}{num}"
+        return prn
+    
+    @staticmethod
+    def prn_list(constelation = "G", number = 33):
+        call = prns()
+        return [call.format_prn(constelation, num) for num in range(1, number + 1)]
+    
     @property
-    def fn_json(self):
-        fname = f"{self.doy}.json"
-        return os.path.join(self.json, fname)
-    
-
-    
-def main():
-    
-    year = 2022
-    doy = 1
-
-       
-    path = build_paths(year, doy)
-    
-    print(path.process)
-
-    
+    def gps_and_glonass(self):
+        call = prns()
+        return call.prn_list("G", 33) + call.prn_list("R", 25)
