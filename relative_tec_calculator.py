@@ -1,16 +1,14 @@
-
 from constants import constants as const
-from load import *
-from cycle_slips import *
+from cycle_slips import cycle_slip_corrector
+from build import build_paths
+import pandas as pd
+import datetime
 
 
 
-def relative_tec(time, c1, p2, rtec):
+def relative_tec(time, c1, p2, rtec, prn):
     
-    """
-    Calculo do TEC relativo a partir das pseudodistâncias
-    Relative TEC (rTEC) from the pseudoranges
-    """
+    """Compute the Relative TEC (slant) from the pseudoranges"""
     
     narc = 1
     index_last = 0
@@ -22,15 +20,15 @@ def relative_tec(time, c1, p2, rtec):
     
     for index in range(1, len(time)):
         
-        if (time[index] - time[index - 1] > datetime.timedelta(minutes = 15)):
+        if (time[index] - time[index - 1] > 
+            datetime.timedelta(minutes = 15)):
             
             b = b / narc
             
             for elem in range(index_last, index):
-                rtec[elem] = const.factor_TEC * (rtec[elem] - b)
+                rtec[elem] = const.factor_TEC(prn) * (rtec[elem] - b)
             
             index_last = index
-            narc = 1
             a1 = p2[index] - c1[index]
             
             b = rtec[index] - a1
@@ -44,54 +42,41 @@ def relative_tec(time, c1, p2, rtec):
     
     for elem in range(index_last, len(time)):
     
-        rtec[elem] = const.factor_TEC * (rtec[elem] - b)
+        rtec[elem] = const.factor_TEC(prn) * (rtec[elem] - b)
         
     return rtec
 
-def relative_tec_data(infile: str, 
-                      prn: str = "G01") -> pd.DataFrame:
+def relative_tec_data(infile: str, prn: str = "G01") -> pd.DataFrame:
+    
     """
-    Read rinex pre-process files (already missing values removed), 
-    correcter cycle-slip and compute the relative tec
+    Read pre-process files (already missing values removed), 
+    correct cycle-slip and compute the relative tec (in TECU)
     """
     
-    df = pd.read_csv(infile, 
-                         delim_whitespace = True, 
-                         index_col = ["sv", "time"])
+    df = pd.read_csv(infile, delim_whitespace = True, index_col = ["sv", "time"])
 
-        
+    time, c1_values, p2_values, rtec = cycle_slip_corrector(df, prn)
     
-    ob = observables(df, prn = prn)
+    stec = relative_tec(time, c1_values, p2_values, rtec, prn)
 
-    # Phases carriers
-    l1_values, l2_values = ob.l1, ob.l2
-    # Loss Lock Indicator
-    l1lli_values, l2lli_values = ob.l1lli, ob.l2lli  
-    # Pseudoranges
-    c1_values, p2_values = ob.c1, ob.p2  
-    time = ob.time # time
-    
-    
-    l1, l2, rtec = cycle_slip_corrector(time, 
-                                        l1_values, l2_values, 
-                                        c1_values, p2_values, 
-                                        l1lli_values, l2lli_values)
-    rtec = relative_tec(time, c1_values, 
-                        p2_values, rtec)
-
-
-    return pd.DataFrame({"stec": rtec}, index = time)
+    return pd.DataFrame({"stec": stec}, index = time)
     
     
 def main():
     
+    year = 2014
+    doy = 1
     
-    infile = "Database/process/2014/ceft/ceft001.txt"
+    infile = build_paths(year, doy).fn_process("alar001")
+    
+    prn = "R01" 
+    df = relative_tec_data(infile, prn = prn)
+    
+    import matplotlib.pyplot as plt
+    
+    df.plot()
     
     
-
-    df = pd.read_csv(infile, 
-                         delim_whitespace = True, 
-                         )
+main()
     
 
