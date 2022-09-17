@@ -10,9 +10,7 @@ class constants(object):
     TECU = 1.0e16 
     A = 40.3  
         
-    
-        
-        
+
     # Geodesic constants
     alt_bottom = 6620.0
     alt_top = 6870.0
@@ -24,7 +22,8 @@ class constants(object):
         
     @staticmethod
     def frequency(prn):
-        """Compute fundamental frequencies"""
+        """Compute fundamental frequencies
+           GPS: G, GLONASS: R, BEIBOU: C, Galileu: E"""
         if prn[0] == "G":
             
             F1 = 1575.42e6 
@@ -41,6 +40,9 @@ class constants(object):
             
             F1 = 1602e6 + numbers[num] * 562.5e3
             F2 = 1246e6 + numbers[num] * 437.5e3
+            
+        else:
+            raise(f"For while doesnt have frequencies for {prn}")
             
         return F1, F2
     
@@ -67,9 +69,3 @@ class constants(object):
         
         
         
-   
-
-
-
-print(constants().factor("G01"))
-
