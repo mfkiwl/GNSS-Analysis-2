@@ -78,32 +78,10 @@ def date_from_doy(year: int, doy:int) -> datetime.datetime:
     """Return date from year and doy"""
     return datetime.date(year, 1, 1) + datetime.timedelta(doy - 1)
 
+def day_and_month(year: int, doy:int) -> tuple:
+    date = date_from_doy(year, doy)
+    return date.month, date.day
         
-
-def create_prns(constellation: str = "G") -> list:
-    
-    """Create a prn list"""
-    
-    out = []    
-    for num in range(1, 33):
-        if num < 10:
-            prn = f"{constellation}0{num}"
-        else:
-            prn = f"{constellation}{num}"
-            
-        out.append(prn)
-        
-    return out
-
-def create_directory(path_to_create: str):
-    """Create a new directory by path must be there year and doy"""
-    try:
-        os.mkdir(path_to_create)
-        print(f"Creation of the directory {path_to_create} successfully")
-    except OSError:
-        print(f"Creation of the directory {path_to_create} failed")
-    
-    return path_to_create
 
 
 def delete_files(infile, extension = ".22d"):
