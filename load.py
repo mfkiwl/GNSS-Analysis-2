@@ -15,7 +15,7 @@ import json
 import ast
 from build import build_paths
 
-def get_infos_from_rinex(ds):
+def get_infos_from_rinex(ds) -> dict:
     
     """Getting attributes from dataset (netcdf file) into dictonary"""
     
@@ -36,34 +36,41 @@ def get_infos_from_rinex(ds):
             
     return y
 
+class load_receiver(object):
 
-def load_receiver(receiver_path: str,
+    """Load RINEX file (receiver measurements)"""
+
+    def __init__(self, receiver_path: str,
                   observables: list = ["L1", "L2", "C1", "P2"],
                   lock_indicators: list = ["L1lli", "L2lli"],
                   attrs: bool = True, 
                   fast: bool = False):
-    
-    """Load RINEX file (receiver measurements)"""
-
-    
-    obs = gr.load(receiver_path, 
-                  useindicators = True, 
-                  fast = fast)
-    
-    df = obs.to_dataframe()
-    
-    
-    df = df.loc[:, observables + lock_indicators]
-    
-    df = df.dropna(subset = observables)
-
-    for col in lock_indicators:
-        df.replace({col: {np.nan: 0}}, inplace = True)
         
-    if attrs:
-        return df, get_infos_from_rinex(obs)
-    else:
-        return df
+        self.receiver_path = receiver_path
+        self.obs = gr.load(self.receiver_path, 
+                      useindicators = True, 
+                      fast = fast)
+
+        self.df = self.obs.to_dataframe()
+
+        self.df = self.df.loc[:, observables + lock_indicators]
+
+        self.df = self.df.dropna(subset = observables)
+
+        for col in lock_indicators:
+            self.df.replace({col: {np.nan: 0}}, inplace = True)
+        
+     
+    @property
+    def attrs(self):
+        """Files attributes (dictionary like)"""
+        return get_infos_from_rinex(self.obs)
+    @property
+    def prns(self):
+        """PRNs list (numpy array like)"""
+        return self.obs.sv.values
+
+
 
 class load_orbits(object):
     
@@ -106,7 +113,7 @@ class load_orbits(object):
         
         return self.pos
     
-def run_for_all_files(year: int, doy: int):
+def run_for_all_files(year: int, doy: int, set_number = None):
     
     """Processing all data for one single day"""
     
@@ -121,8 +128,7 @@ def run_for_all_files(year: int, doy: int):
     
     path_process = create_directory(path.process)
 
-    for filename in files:
-        
+    for filename in files[:set_number]:
         
         if filename.endswith(year_extension):
 
