@@ -66,7 +66,7 @@ def cycle_slip_corrector(df, prn, DIFF_TEC_MAX = 0.05, size = 10) -> tuple:
     MWLC = np.zeros(len(time)) # Combinação linear Melbourne–Wübbena
     
     
-    for index in range(0, len(time)):
+    for index in range(len(time)):
         
         l1 = l1_values[index]
         l2 = l2_values[index]
@@ -127,7 +127,7 @@ def cycle_slip_corrector(df, prn, DIFF_TEC_MAX = 0.05, size = 10) -> tuple:
                                                   index, prn)
 
             
-    return c1_values, p2_values, RTEC
+    return time, c1_values, p2_values, RTEC
 
 
 
@@ -146,7 +146,7 @@ def main():
     #print(np.unique(arr))
     prn = "G02"
     
-    c1, p2, rtec = cycle_slip_corrector(df, prn)
+    time, c1, p2, rtec = cycle_slip_corrector(df, prn)
     
     print(rtec)
     
