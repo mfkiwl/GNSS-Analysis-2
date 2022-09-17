@@ -1,4 +1,4 @@
-from constants import *
+from constants import constants as const
 import datetime
 import numpy as np
 from load import observables
@@ -11,7 +11,6 @@ def correct_phases(RTEC, MWLC,
                    c1_values, p2_values, 
                    i, prn):
     
-    const = constants()
     F1, F2 = const.frequency(prn)
     
     
@@ -23,9 +22,7 @@ def correct_phases(RTEC, MWLC,
     diff_tec = RTEC[i] - RTEC[i - 1]
     diff_mwlc = MWLC[i] - MWLC[i - 1]
     
-    diff_2 = np.round((diff_tec - (diff_mwlc * const.c 
-                                   / F1)) * const.factor_mw(prn))
-    
+    diff_2 = np.round((diff_tec - (diff_mwlc * const.c / F1)) * const.factor_mw(prn))
     
     diff_1 = diff_2 + np.round(diff_mwlc)
     
@@ -43,29 +40,25 @@ def correct_phases(RTEC, MWLC,
     return l1_values, l2_values
 
 
-def cycle_slip_corrector(df, prn, DIFF_TEC_MAX = 0.05):
+def cycle_slip_corrector(df, prn, DIFF_TEC_MAX = 0.05, size = 10) -> tuple:
     
     """Cycle slip correction for each prn"""
     ob = observables(df, prn = prn)
 
-    # phases carriers
+    # phases carriers (Fase das portadoras)
     l1_values = ob.l1
     l2_values = ob.l2
 
     # Loss Lock Indicator
     l1lli_values, l2lli_values = ob.l1lli, ob.l2lli
 
-    # Pseudoranges
+    # Pseudoranges (pseudistancias)
     c1_values, p2_values = ob.c1, ob.p2
 
-    # time
+    # tempo
     time = ob.time
     
-    pdev = DIFF_TEC_MAX * 4.0
-    
-    const = constants()
     index_start = 0
-    size = 10
     
     F1, F2 = const.frequency(prn)
     
@@ -80,7 +73,7 @@ def cycle_slip_corrector(df, prn, DIFF_TEC_MAX = 0.05):
         c1 = c1_values[index]
         p2 = p2_values[index]
         
-        
+        # Calcule o TEC relativo a partir das fases
         RTEC[index] = ((l1 / F1) - (l2 /  F2)) * const.c
         
         # Compute the Melbourne-Wubbena
@@ -91,6 +84,7 @@ def cycle_slip_corrector(df, prn, DIFF_TEC_MAX = 0.05):
         if (time[index] - time[index - 1] > datetime.timedelta(minutes = 15)):
             index_start = index
             
+        # Encontre o resto das phase de bloqueio
         l_slip1 = l1lli_values[index] % 2
         l_slip2 = l2lli_values[index] % 2
         
@@ -101,7 +95,6 @@ def cycle_slip_corrector(df, prn, DIFF_TEC_MAX = 0.05):
                                                   l1_values, l2_values, 
                                                   c1_values, p2_values, 
                                                   index, prn)
-            
         pmean = 0.0
         pdev = DIFF_TEC_MAX * 4.0
         
@@ -131,7 +124,7 @@ def cycle_slip_corrector(df, prn, DIFF_TEC_MAX = 0.05):
             l1_values, l2_values = correct_phases(RTEC, MWLC, 
                                                   l1_values, l2_values, 
                                                   c1_values, p2_values, 
-                                                  index)
+                                                  index, prn)
 
             
     return c1_values, p2_values, RTEC
@@ -150,11 +143,11 @@ def main():
     
     arr = np.array(df.index.get_level_values("sv"))
     
-    print(np.unique(arr))
-    #prn = "G01"
+    #print(np.unique(arr))
+    prn = "G02"
     
+    c1, p2, rtec = cycle_slip_corrector(df, prn)
     
-    
-    #l1, l2, rtec = cycle_slip_corrector(df, ob, prn)
+    print(rtec)
     
 main()
