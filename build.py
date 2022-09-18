@@ -6,9 +6,10 @@ from pathlib import Path
 
 
 
-class build_paths(object):
+class paths(object):
     
-    def __init__(self, year: int, doy: int, root = str(Path.cwd())):
+    def __init__(self, year: int, doy: int, 
+                 root = str(Path.cwd()), const = "igr"):
         
         """Construct file paths from input date (year and doy)"""
         
@@ -19,14 +20,14 @@ class build_paths(object):
         
         self.year = str(year)
         self.doy = doy_str_format(doy)
-        self.ext_rinex = self.year[-2:]
-        
+        self.ext_rinex = self.year[-2:] + "o"
+        self.const = const
     
     @property
     def orbit(self):
         return os.path.join(self.current_path, "orbit", 
-                            self.year, self.doy)
-     
+                            self.year, self.const)
+    
     @property
     def rinex(self):
         return os.path.join(self.current_path, "rinex", 
@@ -41,16 +42,22 @@ class build_paths(object):
                             self.year, self.doy)
     @property
     def dcb(self):
-        return os.path.join(self.current_path, "dcb", self.year)
+        return os.path.join(self.current_path, "dcb", 
+                            self.year)
     @property
     def json(self):
-        return os.path.join(self.current_path, "json", self.year)
+        return os.path.join(self.current_path, "json", 
+                            self.year)
     
     @property
     def fn_json(self):
         fname = f"{self.doy}.json"
         return os.path.join(self.json, fname)
     
+    @property
+    def fn_orbit(self):
+        fname = f"{self.const}{self.week}{self.number}.sp3"
+        return os.path.join(self.orbit, fname)
     
     def fn_process(self, station = "alar"):
         fname =  f"{station}.txt"
@@ -60,12 +67,10 @@ class build_paths(object):
         fname =  f"{station}.txt"
         return  os.path.join(self.all_process, fname)
     
-    def fn_orbit(self, const = "igr"):
-        fname = f"{const}{self.week}{self.number}.sp3"
-        return os.path.join(self.orbit, fname)
+    
     
     def fn_rinex(self, station = "alar"):
-        fname = f"{station}{self.doy}1.{self.ext_rinex}o"
+        fname = f"{station}{self.doy}1.{self.ext_rinex}"
         return os.path.join(self.rinex, fname)
     
     def fn_dcb(self, mgx = True):
@@ -97,3 +102,21 @@ class prns:
     def gps_and_glonass(self):
         call = prns()
         return call.prn_list("G", 33) + call.prn_list("R", 25)
+    
+    
+    
+
+def folder(path_to_create: str):
+    """Create a new directory by path must be there year and doy"""
+    try:
+        os.mkdir(path_to_create)
+        print(f"Creation of the directory {path_to_create} successfully")
+    except OSError:
+        print(f"Creation of the directory {path_to_create} failed")
+    
+    return path_to_create
+
+year = 2014
+doy = 1
+
+print(paths(year, doy, const = "igl").fn_orbit)
