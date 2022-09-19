@@ -1,8 +1,7 @@
 import os
 import pandas as pd
 import numpy as np
-from build import build_paths
-from roti_pipeline import compute_roti_for_all_stations, make_maps
+from build import paths
 import matplotlib.pyplot as plt
 import matplotlib.dates as dates
 import cartopy.feature as cf
@@ -11,10 +10,41 @@ import datetime
 from utils import doy_str_format
 from terminator import *
 from __init__ import *
+from tecmap import MapMaker
 from scipy import interpolate
 
-def get():
-    df = pd.read_csv("roti_2022002.txt",  delim_whitespace = True)
+def make_maps(ds, hour, minute):
+    """Separe the data in specifics time range for construct the TEC MAP"""
+    
+
+    dt = ds.index[0].date()
+
+    year, month, day = dt.year, dt.month, dt.day
+
+    start = datetime.datetime(year, month, day, hour, minute, 0)
+    end = datetime.datetime(year, month, day, hour, minute + 9, 59)
+
+    res = ds.loc[(ds.index >= start) & (ds.index <= end)]
+
+    lat_list = res.lat.values
+    lon_list = res.lon.values
+    roti_list = res.roti.values
+    prn_list = res.prn.values
+
+    tec_matrix, rms_tec = MapMaker.generate_matrix_tec(lat_list, 
+                                                       lon_list, 
+                                                       roti_list, 
+                                                       prn_list, -1)
+    
+    return MapMaker.full_binning(tec_matrix, -1)
+
+def maps_and_times(infile, 
+                   morning = 7, 
+                   evening = 21, 
+                   roti_maximum = 5):
+    
+    df = pd.read_csv(infile, delim_whitespace = True)
+    
     df.index = pd.to_datetime(df.index)
     dt = df.index[0].date()
     
@@ -24,20 +54,23 @@ def get():
     roti_maps = []
     for hour in range(0, 24):
         for minute in range(0, 60, 10):
-            times.append(datetime.datetime(year, month, day, hour, minute, 0))
-            roti_maps.append(make_maps(df.loc[df.roti <= 5, :], hour, minute))
+            if (hour > evening) or (hour < morning):
+                
+                times.append(datetime.datetime(year, month, day, 
+                                               hour, minute, 0))
+                dat = df.loc[df.roti <= roti_maximum, :]
+                
+                roti_maps.append(make_maps(dat, hour, minute))
             
     return times, roti_maps
         
-times, roti_maps = get()        
+      
         
 
-def setting_states_map(ax):    
+def setting_states_map(ax, LAT_MIN = -60.0, LAT_MAX = 40.0, 
+                       LON_MIN = -120.0, LON_MAX = -20.0):    
     
-    LAT_MIN = -60.0
-    LAT_MAX = 40.0
-    LON_MIN = -120.0
-    LON_MAX = -20.0
+    
     ax.set_global()
 
     ax.gridlines(color = 'grey', linestyle = '--', 
@@ -71,7 +104,7 @@ def setting_states_map(ax):
 
 
 
-def plott(i, save = True):
+def plotROTImaps(i, save = True):
     
     
     if save:
@@ -86,15 +119,9 @@ def plott(i, save = True):
     
     levels = np.linspace(0, 5, 50)
     tecmap = np.where(tecmap < 0, np.nan, tecmap)
-    
-    LAT_MIN = -60.0
-    LAT_MAX = 40.0
-    LON_MIN = -120.0
-    LON_MAX = -20.0
 
-
-    yy = np.linspace(LAT_MIN, LAT_MAX, 200)
-    xx = np.linspace(LON_MIN, LON_MAX, 200)
+    yy = np.linspace(-60.0, 40.0, 200)
+    xx = np.linspace(-120.0, -20.0, 200)
 
 
     lon, lat = np.meshgrid(xx, yy)
@@ -109,7 +136,7 @@ def plott(i, save = True):
 
     cb.set_label(r'ROTI (TECU/min)')
 
-    setting_states_map(ax)
+    setting_states_map(ax, LAT_MIN = -40, LAT_MAX = 10, LON_MIN=-80)
 
     ax.set(title = date)
 
@@ -134,15 +161,16 @@ def plott(i, save = True):
                 transform = ccrs.PlateCarree())
     
     if save:
-        do = int(doy_str_format(i)) + 144
+        do = int(doy_str_format(i)) #+ 144
         plt.savefig(f'img/maps/{do}.png', 
                     dpi = 80, bbox_inches="tight")
     else:
         plt.show()
 
+year = 2014
+doy = 1
+infile = f"Database/roti/{year}/{doy_str_format(doy)}.txt"
+times, roti_maps = maps_and_times(infile, morning = 7, evening = 21) 
 
-
-
-#setting_states_map(ax)
 for i in range(len(times)):
-    plott(i, save = True)
+    plotROTImaps(i, save = True)
