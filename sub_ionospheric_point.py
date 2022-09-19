@@ -1,7 +1,10 @@
 from constants import constants as const
 from pyproj import Transformer, CRS
 import numpy as np
-from load import *
+from load import interpolate_orbits
+import pandas as pd
+from build import paths
+import json
 
 def convert_coords(obs_x, obs_y, obs_z, to_radians = True):
     
@@ -65,7 +68,7 @@ class IonosphericPiercingPoint(object):
         arg_1 = pow((self.dy * self.dxdy + self.dz * self.dxdz), 2)
         arg_2 = pow(self.dx, 2) + pow(self.dy, 2) + pow(self.dz, 2)
         arg_3 = pow(self.dxdy, 2) + pow(self.dxdz, 2) - pow(self.dx, 2) * pow(h, 2)
-        arg_4 = (pow(self.dy, 2) + pow(self.dz, 2) + pow(self.dx, 2))
+        arg_4 = pow(self.dy, 2) + pow(self.dz, 2) + pow(self.dx, 2)
 
         fator = np.sqrt(arg_1 - arg_2 * arg_3)
 
@@ -139,7 +142,7 @@ class IonosphericPiercingPoint(object):
     
     def ionospheric_sub_point(self, lat, lon):
         
-        """ Coordinates of ionospheric sub point (degrees)"""
+        """ Coordinates of ionospheric piercing point (in degrees)"""
     
         azimuth = self.azimuth(lat, lon)
         zangle_ion = self.zenital_iono_angle(lat, lon)
@@ -152,10 +155,7 @@ class IonosphericPiercingPoint(object):
     
         return np.degrees(lat_ip), np.degrees(lon_ip)
     
-    
-
- 
-    @staticmethod
+    @property
     def slant_factor(self):
         
         top_ion_x, top_ion_y, top_ion_z = self.positions(height = "top")
@@ -170,26 +170,36 @@ class IonosphericPiercingPoint(object):
 
 
 def TEC_projection(elevation):
- """TEC projection """
+    """TEC projection """
  
- el = np.radians(elevation)
- Re = const.radius_earth
- hm = const.avg_heigth
- 
- return np.cos((Re / (Re + hm)) * np.cos(el))
+    el = np.radians(elevation)
+    Re = const.radius_earth
+    hm = const.avg_heigth
+    
+    return np.cos((Re / (Re + hm)) * np.cos(el))
 
 
 
-def piercing_points_data(orbital_path: str,     
-                         obs: list, 
+def piercing_points_data(year, doy,     
+                         station, 
                          prn: str = "G01") -> pd.DataFrame:
     
     """Read orbits files fpr each prn and compute the ionospheric 
     Piercing point (given by latitude and longitude)"""
     
-    ox, oy, oz = obs[0], obs[1], obs[2]
+
+    if prn[0] == "R":
+        const = "igl"
+    elif prn[0] == "G":
+        const = "igr"
     
-    df = load_orbits(orbital_path, prn = prn).position()
+    path = paths(year, doy, const = const)
+    
+    positions = json.load(open(path.fn_json))[station]["position"]
+    
+    ox, oy, oz = positions[0], positions[1], positions[2]
+    
+    df = interpolate_orbits(path.fn_orbit, prn = prn)
 
     sat_x_vals = df.x.values
     sat_y_vals = df.y.values
@@ -230,12 +240,19 @@ def piercing_points_data(orbital_path: str,
 
 def main():
     path_orbit = "igr21906.sp3"
-    prn = "G01"
+    prn = "R01"
     
     
-    obs_x, obs_y, obs_z = 5043729.726, -3753105.556, -1072967.067
+    #obs_x, obs_y, obs_z = 5043729.726, -3753105.556, -1072967.067
 
-    obs = list((obs_x, obs_y, obs_z))
+    #obs = list((obs_x, obs_y, obs_z))
+    year = 2014
+    doy = 1
     
-    df = piercing_points_data(path_orbit, obs, prn = prn)
+    station = "alar"
     
+    df = piercing_points_data(year, doy, station, prn = prn)
+    
+    print(df)
+    
+main()
