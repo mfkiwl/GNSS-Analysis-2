@@ -42,24 +42,24 @@ def join_data(year: int,
     
     return df
 
-
-year = 2014
-doy = 1
-
-_, _, files = next(os.walk("001/"))
-
-
-for filename in files:
+def process_for_all_stations():
+    year = 2014
+    doy = 1
     
-    station = filename[:4]
-    out_station = []
-    for prn in prns().gps_and_glonass:
-        try:
-            out_station.append(join_data(year, doy, station, prn))
-        except:
-            continue
+    _, _, files = next(os.walk("001/"))
     
-    dat = pd.concat(out_station)
-    print(f"The station: {station} finishied")
-    dat.to_csv(f"Database/all_process/2014/001_test/{filename}",
-               index = True, sep = " ")
+    
+    for filename in files:
+        
+        station = filename[:4]
+        out_station = []
+        for prn in prns().gps_and_glonass:
+            try:
+                out_station.append(join_data(year, doy, station, prn))
+            except:
+                continue
+        
+        dat = pd.concat(out_station)
+        print(f"The station: {station} finished")
+        dat.to_csv(f"Database/all_process/2014/001_test/{filename}",
+                   index = True, sep = " ")
