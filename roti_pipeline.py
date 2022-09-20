@@ -20,6 +20,7 @@ def compute_roti(prn_el, prn, delta = "2.5min"):
     
     return pd.concat([roti_df, coords], axis = 1)
 
+
 def load_all_process(infile, filename):
     
     df = pd.read_csv(os.path.join(infile, filename), 
@@ -32,6 +33,17 @@ def load_all_process(infile, filename):
     
     return df
 
+
+def set_between(df, morning = 7, evening = 21):
+    dt = df.index[0].date()
+
+    year, month, day = dt.year, dt.month, dt.day
+    
+    start = datetime.datetime(year, month, day, evening, 0)
+    
+    end = datetime.datetime(year, month, day, morning, 0)
+    
+    return df.loc[(df.index > start) | (df.index < end), :]
 
 def compute_roti_for_all_stations(year, 
                                   doy, 
@@ -51,22 +63,12 @@ def compute_roti_for_all_stations(year,
     
     for filename in files:
         
-        
-        
-        df = load_all_process(infile, filename)
-        
-        
-        dt = df.index[0].date()
 
-        year, month, day = dt.year, dt.month, dt.day
-        
-        start = datetime.datetime(year, month, day, evening, 0)
-        
-        end = datetime.datetime(year, month, day, morning, 0)
-        
-        sel_time = df.loc[(df.index > start) | (df.index < end), :]
-        
+        df = load_all_process(infile, filename)
+    
         if time_between:
+            sel_time = set_between(df, morning = morning, evening = evening)
+            
             dat = sel_time.copy()
         else:
             dat = df.copy()
