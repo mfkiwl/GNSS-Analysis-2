@@ -10,10 +10,10 @@ import pandas as pd
 import numpy as np
 import datetime
 import os
-from utils import doy_str_format, create_directory
+from utils import doy_str_format
 import json 
 import ast
-from build import build_paths
+from build import paths, folder
 
 def get_infos_from_rinex(ds) -> dict:
     
@@ -71,81 +71,46 @@ class load_receiver(object):
         return self.obs.sv.values
 
 
-
-class load_orbits(object):
+def interpolate_orbits(infile, prn, parameter = "position"):
     
-    """Read orbit data (CDDIS Nasa) with interpolation method"""
-
-    def __init__(self, orbital_path, prn = "G01"):
-        
-        self.orbital_path = orbital_path
-        self.prn = prn
-
-        self.ob = gr.load(self.orbital_path).sel(sv =  self.prn).to_dataframe()
-        
-        self.time = pd.to_datetime(np.unique(self.ob.index.get_level_values('time')))
-
-
-    def position(self, interpol:str = "30s"):
+    obs = gr.load(infile)
     
-        pos_values = {}
-        
-        for coord in ["x", "y", "z"]:
-            
-            pos_values[coord] = self.ob.loc[self.ob.index.get_level_values("ECEF") == coord, 
-                               ["position"]].values.ravel()
+    df = obs.sel(sv = prn).to_dataframe()
+    
+    time = pd.to_datetime(np.unique(df.index.get_level_values('time')))
+    
+    coord_values = {}
 
-        self.pos = pd.DataFrame(pos_values, index = self.time)
-        
-        if interpol:
-            end = self.pos.index[0] + datetime.timedelta(hours = 23, 
-                                                         minutes = 59, 
-                                                         seconds = 30)
-            start = self.pos.index[0]
-            
-            self.pos = self.pos.reindex(pd.date_range(start = start, 
-                                                      end = end, 
-                                                      freq = interpol))
+    for coord in ["x", "y", "z"]:
 
-            self.pos = self.pos.interpolate(method = 'spline', order = 5)
-            
-            self.pos.columns.names = [self.prn]
-        
-        return self.pos
-    
-def run_for_all_files(year: int, doy: int, set_number = None):
-    
-    """Processing all data for one single day"""
-    
-    path = build_paths(year, doy)
-    rinex_path = path.rinex
-    
-    _, _, files = next(os.walk(rinex_path))
+        coord_values[coord] = df.loc[df.index.get_level_values("ECEF") == coord, 
+                                   [parameter]].values.ravel()
 
-    out_dict = {}
-    
-    year_extension = str(year)[-2:] + "o"
-    
-    path_process = create_directory(path.process)
+    res = pd.DataFrame(coord_values, index = time)
 
-    for filename in files[:set_number]:
-        
-        if filename.endswith(year_extension):
+    start = res.index[0]
 
-            name_to_save = filename[:4]
-            
-            try:
-                df, attrs = load_receiver(os.path.join(rinex_path, filename))
-                
-                path_to_save = os.path.join(path_process, name_to_save + ".txt")
-                df.to_csv(path_to_save, sep = " ", index = True)
-                
-                out_dict.update(attrs)
-                print(f"{name_to_save} got it!")
-            except:
-                print(f"{name_to_save} doesn't work!")
-                continue
-    return out_dict
+    end = start + datetime.timedelta(hours = 23, minutes = 59, seconds = 30)
+
+    res = res.reindex(pd.date_range(start = start, end = end, freq = "30s"))
+    
+    res.columns.names = [prn]
+    
+    return res.interpolate(method = 'spline', order = 5)
+
+
+
+def load_all_process(infile, filename):
+    
+    df = pd.read_csv(os.path.join(infile, filename), 
+                     delim_whitespace = True, 
+                     index_col = "time")
+
+    df.index = pd.to_datetime(df.index)
+    
+    df["lon"] = df["lon"] - 360
+    
+    return df
 
 
 def save_attrs(path: str, out_dict: dict):
@@ -182,21 +147,4 @@ class observables(object):
         self.time = pd.to_datetime(obs.index.get_level_values('time'))
         
 
-def read_all_processed(year: int, 
-                       doy: int, 
-                       station: str) -> pd.DataFrame:
-    
-    """Read all processed data (only for my local repository)"""
-
-    filename  = f"{station}.txt"
-
-    infile = build_paths(year, doy).all_process
-
-    df = pd.read_csv(infile + filename, 
-                     delim_whitespace = True, 
-                     index_col = "time")
-
-    df.index = pd.to_datetime(df.index)
-
-    return df
 
