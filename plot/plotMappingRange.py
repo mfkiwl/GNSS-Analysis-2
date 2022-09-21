@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import shapely.geometry as sgeom
 from cartopy.geodesic import Geodesic
+from plot.plotStations import  plotStations
 
 def circle_range(ax, longitude, latitude, 
                  radius = 500, color = "gray"):
@@ -35,18 +36,13 @@ def circle_with_legend(ax, angle, height, name, color, marker = "s"):
              color = color, markersize = 15,
              transform = ccrs.PlateCarree())
  
-     #ax.text(lon, lat + (radius / 100), 
-       #      f"h = {height} km (raio de {round(radius)} km)", 
-       #      transform = ccrs.PlateCarree())
-     
 
-    
-    
-def salve():     
+      
+def save():     
   
     plt.savefig("range.png", dpi = 500, bbox_inches = "tight")
     
-    plt.show()
+   
     
     
     
@@ -76,5 +72,11 @@ for num in range(2):
     circle_with_legend(ax, angle, 250, name, color, marker)
     
     
+plotStations(ax)
+    
+    
 ax.legend(["Cariri \n (imageador)", 
-           "Fortaleza \n (digissonda)"], ncol = 2)
+           "Fortaleza \n (digissonda)", 
+           "Receptores GNSS"], ncol = 3)
+
+plt.show()
