@@ -1,15 +1,19 @@
-
-
 from sub_ionospheric_point import convert_coords
 import json
+from plot.plotConfig import *
 
+ 
+kargs = dict()
 
-
-def plotStations(ax, year, color = "green", markersize = 5, marker = "o"):
+def plotStations(ax,year = 2014, 
+             doy = 1, 
+             color = "green", 
+             markersize = 15, 
+             marker = "o",   
+             lat_min = -12, lat_max = -2, lon_max = -32, lon_min = -42):
     
     
-    path_json = 'Database/json/2014/001.json'
-
+    path_json = f'Database/json/{year}/001.json'
 
     dat = json.load(open(path_json))
 
@@ -22,5 +26,13 @@ def plotStations(ax, year, color = "green", markersize = 5, marker = "o"):
         coords = convert_coords(obs_x, obs_y, obs_z, to_radians = False)
         lon, lat, alt = coords
         
-        ax.plot(lon, lat, marker = marker, markersize = markersize, color = color)
-    
+        
+        
+        if (lat_min < lat < lat_max) and (lon_min < lon < lon_max):
+            
+            ax.plot(lon, lat, marker = marker, markersize = markersize, color = color)
+            
+            ax.text(lon + 0.09, lat, station.upper(), 
+                    transform = ccrs.PlateCarree(), color = "k")
+            
+            
