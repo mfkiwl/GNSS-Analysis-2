@@ -239,18 +239,3 @@ def piercing_points_data(year, doy,
     return pd.DataFrame(result, index = index)
 
 
-from plot.plotMappingRange import plotMapping
-
-def main():
-    prn = "G01"
-    
-
-    year = 2014
-    doy = 1
-    
-    station = "ceft"
-    
-    df = piercing_points_data(year, doy, station, prn = prn)
-    
-    print(df)
-main()
