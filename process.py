@@ -1,5 +1,4 @@
 from sub_ionospheric_point import piercing_points_data
-from relative_tec_calculator import relative_tec_data
 from differentialCodeBias import get_cdb_value
 import pandas as pd
 import time
@@ -32,7 +31,7 @@ def join_data(year: int,
         
     ipp = piercing_points_data(year, doy, station, prn = prn)
         
-    df = tec.join(ipp).interpolate(method ='nearest').ffill().bfill()
+    df = tec.join(ipp).interpolate().ffill().bfill()
 
     df.rename(columns = {prn : "stec"}, inplace = True)
 
@@ -42,7 +41,7 @@ def join_data(year: int,
     
     return df
 
-def process_for_all_stations():
+def process_for_all_stations(infile):
     year = 2014
     doy = 1
     

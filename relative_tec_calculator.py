@@ -29,6 +29,7 @@ def relative_tec(time, c1, p2, rtec, prn):
                 rtec[elem] = const.factor_TEC(prn) * (rtec[elem] - b)
             
             index_last = index
+            narc = 1 # IMPORTANTE
             a1 = p2[index] - c1[index]
             
             b = rtec[index] - a1
@@ -83,12 +84,12 @@ def main():
      
     df = load_receiver(infile).df
     prn = "G01" 
-    df = relative_tec_data(df, prn = prn)
+    df = relative_tec_data(df, prn = prn).dropna()
     
     print(df)
     
     df.plot()
     
-#main()
+
     
 

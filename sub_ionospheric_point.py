@@ -206,8 +206,10 @@ def piercing_points_data(year, doy,
     sat_z_vals = df.z.values
 
     times = df.index
-
-    lon, lat, alt = convert_coords(ox, oy, oz)
+    #print(positions)
+    lon, lat, alt = convert_coords(ox, oy, oz, to_radians = True)
+    
+    #print(lon, lat)
 
     result = { "lon": [], "lat": [], "el": [], "proj": []}
     
@@ -237,22 +239,18 @@ def piercing_points_data(year, doy,
     return pd.DataFrame(result, index = index)
 
 
+from plot.plotMappingRange import plotMapping
 
 def main():
-    path_orbit = "igr21906.sp3"
-    prn = "R01"
+    prn = "G01"
     
-    
-    #obs_x, obs_y, obs_z = 5043729.726, -3753105.556, -1072967.067
 
-    #obs = list((obs_x, obs_y, obs_z))
     year = 2014
     doy = 1
     
-    station = "alar"
+    station = "ceft"
     
     df = piercing_points_data(year, doy, station, prn = prn)
     
     print(df)
-    
 main()

@@ -3,7 +3,7 @@ import datetime
 import numpy as np
 from load import observables
 import pandas as pd
-from build import build_paths
+from build import paths
 
 
 def correct_phases(RTEC, MWLC, 
@@ -12,8 +12,7 @@ def correct_phases(RTEC, MWLC,
                    i, prn):
     
     F1, F2 = const.frequency(prn)
-    
-    
+      
     l1 = l1_values[i]
     l2 = l2_values[i]
     c1 = c1_values[i]
@@ -140,14 +139,13 @@ def main():
     path = build_paths(year, doy).fn_process(station)
 
     df = pd.read_csv(path, delim_whitespace = True, index_col = ["sv", "time"])
-    
-    arr = np.array(df.index.get_level_values("sv"))
-    
-    #print(np.unique(arr))
-    prn = "G02"
+        
+    prn = "R01"
     
     time, c1, p2, rtec = cycle_slip_corrector(df, prn)
     
-    print(rtec)
+    import matplotlib.pyplot as plt
     
-main()
+    plt.plot(time, rtec)
+    
+#main()

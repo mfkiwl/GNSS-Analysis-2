@@ -67,8 +67,6 @@ class paths(object):
         fname =  f"{station}.txt"
         return  os.path.join(self.all_process, fname)
     
-    
-    
     def fn_rinex(self, station = "alar"):
         fname = f"{station}{self.doy}1.{self.ext_rinex}"
         return os.path.join(self.rinex, fname)
@@ -96,13 +94,13 @@ class prns:
     @staticmethod
     def prn_list(constelation = "G", number = 33):
         call = prns()
-        return [call.format_prn(constelation, num) for num in range(1, number + 1)]
+        return [call.format_prn(constelation, num) 
+                for num in range(1, number + 1)]
     
     @property
     def gps_and_glonass(self):
         call = prns()
-        return call.prn_list("G", 33) + call.prn_list("R", 25)
-    
+        return call.prn_list("G", 32) + call.prn_list("R", 24)
     
     
 
@@ -116,7 +114,9 @@ def folder(path_to_create: str):
     
     return path_to_create
 
-year = 2014
-doy = 1
-
-print(paths(year, doy, const = "igl").fn_orbit)
+def main():
+    
+    year = 2014
+    doy = 1
+    path = paths(year, doy)
+    print(path.fn_json)
