@@ -3,9 +3,12 @@ import os
 import pandas as pd
 from build import prns
 import datetime
+from load import load_all_process
 from utils import doy_str_format
 
-def compute_roti(prn_el, prn, delta = "2.5min"):
+def compute_roti(df, prn, delta = "2.5min"):
+    
+    prn_el = df.loc[(df.prn == prn), :]
     
     dtec = prn_el["stec"] - prn_el["stec"].rolling(delta).mean()
     time = prn_el.index
@@ -15,23 +18,10 @@ def compute_roti(prn_el, prn, delta = "2.5min"):
     roti_df = pd.DataFrame({"roti": roti, "prn": prn}, 
                            index = roti_time)
 
-    coords = prn_el.loc[prn_el.index.isin(roti_time), 
-                        ["lat", "lon"]]
+    coords = prn_el.loc[prn_el.index.isin(roti_time), ["lat", "lon", "el"]]
     
     return pd.concat([roti_df, coords], axis = 1)
 
-
-def load_all_process(infile, filename):
-    
-    df = pd.read_csv(os.path.join(infile, filename), 
-                     delim_whitespace = True, 
-                     index_col = "time")
-
-    df.index = pd.to_datetime(df.index)
-    
-    df["lon"] = df["lon"] - 360
-    
-    return df
 
 
 def set_between(df, morning = 7, evening = 21):
@@ -44,6 +34,7 @@ def set_between(df, morning = 7, evening = 21):
     end = datetime.datetime(year, month, day, morning, 0)
     
     return df.loc[(df.index > start) | (df.index < end), :]
+
 
 def compute_roti_for_all_stations(year, 
                                   doy, 
@@ -59,35 +50,30 @@ def compute_roti_for_all_stations(year,
 
     _, _, files = next(os.walk(infile))
     
-    result = []
+    
     
     for filename in files:
         
 
         df = load_all_process(infile, filename)
     
-        if time_between:
-            sel_time = set_between(df, morning = morning, evening = evening)
-            
-            dat = sel_time.copy()
-        else:
-            dat = df.copy()
-                        
-
+        result = []
+        
         for prn in prns().gps_and_glonass:
             try:
-                prn_el = dat.loc[(dat.prn == prn) & (dat.el > elevation), :]
 
-                if prn_el.empty:
-                    pass
-                else:
-                    result.append(compute_roti(prn_el, prn, delta = delta))
+                result.append(compute_roti(df, prn, delta = delta))
             except:
                 continue
             
+        ds = pd.concat(result)
+        
+        ds.to_csv(f"Database/roti/{year}/001/{filename}", 
+                  sep = " ", index = True)
+        
         print(f"Station {filename[:4]} processed correctly")
 
-    return pd.concat(result)
+    return 
 
 
 
@@ -98,9 +84,8 @@ def main():
     
     ds = compute_roti_for_all_stations(year, doy)    
     
-    ds.to_csv(f"Database/roti/{year}/{doy_str_format(doy)}.txt", 
-              sep = " ", index = True)
     
+main()
 
 
     
