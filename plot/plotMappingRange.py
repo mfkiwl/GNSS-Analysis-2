@@ -1,54 +1,80 @@
-import cartopy.feature as cf
-import cartopy.crs as ccrs
+from plot.plotConfig import *
 import matplotlib.pyplot as plt
 import numpy as np
+import shapely.geometry as sgeom
+from cartopy.geodesic import Geodesic
 
+def circle_range(ax, longitude, latitude, 
+                 radius = 500, color = "gray"):
+             
+    gd = Geodesic()
 
-def plotMapping(start_lat = -40, 
-                end_lat = 15, 
-                start_lon = -80, 
-                end_lon = -20,
-                step_lat = 5, 
-                step_lon = 5, 
-                xsize = 12, 
-                ysize = 10):
+    cp = gd.circle(lon = longitude, 
+                   lat = latitude, 
+                   radius = radius * 1000.)
     
-    """Plotting a map with cartopy"""
-    
-    
-    fig = plt.figure(figsize = (xsize, ysize))
-    ax = plt.axes(projection = ccrs.PlateCarree())
-    
-    ax.set_global()
-    
-    ax.gridlines(color = 'grey', linestyle = '--', 
-                 crs=ccrs.PlateCarree())
-    
-    states_provinces = cf.NaturalEarthFeature(
-                        category='cultural',
-                        name='admin_1_states_provinces_lines',
-                        scale='50m',
-                        facecolor='none')
-    
-    
-    ax.add_feature(states_provinces, edgecolor='black')
-    ax.add_feature(cf.COASTLINE, edgecolor='black', lw = 2) 
-    ax.add_feature(cf.BORDERS, linestyle='-', edgecolor='black')
-    
-    ax.set(ylabel = 'Latitude (°)', xlabel = 'Longitude (°)')
-    
-    
-    ax.set_extent([start_lon, end_lon, start_lat, end_lat], 
-              crs=ccrs.PlateCarree())
-    
-    ax.set_xticks(np.arange(start_lon, end_lon + step_lat, step_lon), 
-                  crs=ccrs.PlateCarree()) 
-    
-    ax.set_yticks(np.arange(start_lat, end_lat + step_lat, step_lat), 
-                  crs=ccrs.PlateCarree())
+    geoms = [sgeom.Polygon(cp)]
 
-    return fig, ax
+    ax.add_geometries(geoms, crs=ccrs.PlateCarree(), 
+                      edgecolor = 'black', color = color,
+                      alpha = 0.2, label = 'radius')
 
+def circle_with_legend(ax, angle, height, name, color, marker = "s"):
+     
+     radius = height * np.sin(np.radians(angle)) 
+          
+     if radius < 1:
+         radius = 500
+     
+     lon, lat = tuple(infos[name])
 
+     circle_range(ax, lon, lat, radius = radius, 
+                  color = color)
+         
+     ax.plot(lon, lat, marker = marker, label =  name, 
+             color = color, markersize = 15,
+             transform = ccrs.PlateCarree())
+ 
+     #ax.text(lon, lat + (radius / 100), 
+       #      f"h = {height} km (raio de {round(radius)} km)", 
+       #      transform = ccrs.PlateCarree())
+     
 
+    
+    
+def salve():     
+  
+    plt.savefig("range.png", dpi = 500, bbox_inches = "tight")
+    
+    plt.show()
+    
+    
+    
+    
+p = plotting()
 
+fig, ax = p.subplots_with_map(xsize = 15, ysize = 15, ncols = 1)
+
+p.setting_states_map(ax, step_lat = 1, step_lon = 1,
+                     lat_min = -12, lat_max = -2, 
+                     lon_max = -32, lon_min = -42)
+
+infos = {"Cariri": [-36.55, -7.38], 
+         "Fortaleza": [-38.45, -3.9]}
+
+angles =  [180, 33]
+colors = ["red", "blue"]
+names = ["Cariri", "Fortaleza"]
+markers = ["s", "^"]
+
+for num in range(2):
+    
+    angle = angles[num]
+    name = names[num]
+    color = colors[num]
+    marker = markers[num]
+    circle_with_legend(ax, angle, 250, name, color, marker)
+    
+    
+ax.legend(["Cariri \n (imageador)", 
+           "Fortaleza \n (digissonda)"], ncol = 2)
