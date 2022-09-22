@@ -10,13 +10,8 @@ import pyIGRF
 import datetime
 import time
 
-da = pd.read_csv("mag_inclination_2021.txt", 
-                 delim_whitespace = True)
 
-table = pd.pivot_table(da, values = "B", 
-                    index = "lat", columns = "lon")
  
-table = np.rad2deg(np.arctan(np.tan(np.deg2rad(table)) * 0.5))
 
 
 def toCoordFraction(degrees, minutes, seconds):
@@ -62,14 +57,17 @@ def table_igrf(date = datetime.date(2010, 1, 1)):
     return pd.pivot_table(df, values='Dip', index=['Lat'], columns=['Lon'])
 
 def run_and_save():
+    table = np.rad2deg(np.arctan(np.tan(np.deg2rad(table)) * 0.5))
 
     table = table_igrf(datetime.datetime(2014, 1, 1))
 
     table.to_csv("Database/geo/Inclination2014.txt")
 
 def plot_equator(ax):
-    df = pd.read_csv("Database/geo/Inclination2014.txt", delimiter = ",", index_col = "Lat")
+    df = pd.read_csv("Database/geo/Inclination2021.txt", 
+                     delimiter = ",", index_col = "Lat")
     
     ax.contour(df.columns, df.index, df.values, 1, 
-               linewidths = 2, color = 'k',
+               linewidths = 2,
                 transform = ccrs.PlateCarree())
+

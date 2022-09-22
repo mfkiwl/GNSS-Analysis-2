@@ -2,7 +2,7 @@ import pandas as pd
 from scipy import stats
 import numpy as np
 from utils import doy_str_format, date_from_doy
-
+import datetime
 
 def time_gap(time, tgap = None):
 
@@ -49,6 +49,7 @@ def rot_and_roti(stec, time):
     rot_tstamps = []
     roti_tstamps = []
     
+    
     for i in range(len(vls)): 
 
         delta_time = decimal_time[id_dict[i][-1]] - decimal_time[id_dict[i][0]]     
@@ -65,14 +66,15 @@ def rot_and_roti(stec, time):
         rot_0 = (shift_stec - stec_temp)
         
         rot_1 = (rot_0[1: len(rot_0) - 1] / (deltahora[1: len(rot_0) - 1]))*60.
-        
-    
+            
         rot.extend(rot_1)
         rot_tstamps.extend(t_temp[1: len(t_temp) - 1])
         
         
         
-        if float(delta_time) >= 0.166667:                
+        if float(delta_time) >= 0.166667:    
+
+            #print(float(delta_time))            
 
             for j in range(step_hora, len(rot_1) - step_hora, step_hora):
                 rot_2 = np.sqrt(np.mean(np.power(rot_1[j - step_hora: j + step_hora], 2)) - 

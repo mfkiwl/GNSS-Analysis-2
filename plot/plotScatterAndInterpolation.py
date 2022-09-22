@@ -7,23 +7,15 @@ import os
 import datetime
 
 
-year = 2014
-doy = 1
-hour = 22
-minute = 20
-elevation = 20
+def save(infile = "img/methods/IPP.png"):     
+    plt.savefig(infile, dpi = 500, bbox_inches = "tight")
+    
 
-df = run_for_all_files(files, hour, minute, elevation = elevation)
-
-lat_min = -12
-lat_max = -2
-lon_max = -32
-lon_min = -42
-
-
-def plot_scatter(df, lon_min = -80, lon_max = -30, 
-                 lat_max = 10, lat_min = -40, 
-                 step_lon = 10, step_lat = 10, max_binning = 10):
+def plotScatterInterpolation(df, 
+                             lon_min = -80, lon_max = -30, 
+                             lat_max = 10, lat_min = -40, 
+                             step_lon = 10, step_lat = 10, 
+                             max_binning = 10):
 
     df1 = df.loc[(lat_min < df.lat) & 
                  (df.lat < lat_max) & 
@@ -33,8 +25,6 @@ def plot_scatter(df, lon_min = -80, lon_max = -30,
     lats = df1.lat.values
     lons = df1.lon.values
     values = df1.roti.values
-    
-    
     
     p = plotting()
 
@@ -49,14 +39,12 @@ def plot_scatter(df, lon_min = -80, lon_max = -30,
                             lon_max = lon_max,
                             step_grid = 0.5, bad_value = -1)
     
-    tecmap = full_binning(rms, max_binning = max_binning)
+    tecmap = full_binning(matrix, max_binning = max_binning)
 
     tecmap  = np.where(tecmap == -1, np.nan, tecmap)
     #tecmap  = np.where(tecmap > 5, 5, tecmap)
 
     for num, ax in enumerate(ax.flat):
-        
-        
         
         if num == 0:
             img = ax.scatter(lons, lats, c = values, cmap = "jet", 
@@ -67,7 +55,7 @@ def plot_scatter(df, lon_min = -80, lon_max = -30,
             y = np.arange(lat_min, lat_max, 0.5)
             levels = np.linspace(0, 2.5, 50)
             
-            img = ax.contourf(x, y, martix, levels = levels, cmap = "jet")
+            img = ax.contourf(x, y, matrix, levels = levels, cmap = "jet")
     
         p.setting_states_map(ax, 
                              step_lat = step_lat, 
@@ -93,23 +81,10 @@ def plot_scatter(df, lon_min = -80, lon_max = -30,
         
     fig.suptitle(date, y = 0.7)
     
-    def save(infile = "img/methods/IPP.png"):     
-      
-        plt.savefig(infile, dpi = 500, bbox_inches = "tight")
+    
     #save()
     plt.show()
     
-plot_scatter(df,
-             lat_min = -12, 
-             lat_max = -2, 
-             lon_max = -32, 
-             lon_min = -42, 
-             step_lon = 1, 
-             step_lat= 1, 
-             max_binning = 3
-             )
-
-
 def equator(ax):
     eq = pd.read_csv("Database/geo/Inclination2021.txt", 
                      delim_whitespace = True)
@@ -121,3 +96,33 @@ def equator(ax):
                 transform = ccrs.PlateCarree())
     
     cs.cmap.set_over('red')
+    
+    
+year = 2014
+doy = 1
+hour = 22
+minute = 20
+elevation = 20
+
+infile = "Database/roti/2014/001/"
+
+lat_min = -12
+lat_max = -2
+lon_max = -32
+lon_min = -42
+
+
+df = run_for_all_files(infile, hour, minute, elevation = elevation)
+    
+plotScatterInterpolation(df,
+                         lat_min = -12, 
+                         lat_max = -2, 
+                         lon_max = -32, 
+                         lon_min = -42, 
+                         step_lon = 2, 
+                         step_lat = 2, 
+                         max_binning = 10
+                         )
+
+
+
