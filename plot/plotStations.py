@@ -2,8 +2,16 @@ from sub_ionospheric_point import convert_coords
 import json
 from plot.plotConfig import *
 
- 
-kargs = dict()
+def get_coords_from_sites(dat, station):
+   
+    
+    positions = dat[station]["position"] 
+    obs_x, obs_y, obs_z = tuple(positions)
+
+    coords = convert_coords(obs_x, obs_y, obs_z, to_radians = False)
+    lon, lat, alt = coords
+    
+    return lon, lat
 
 def plotStations(ax,year = 2014, 
              doy = 1, 
@@ -20,13 +28,9 @@ def plotStations(ax,year = 2014,
     stations = list(dat.keys())
 
     for station in stations:
-        positions = dat[station]["position"] 
-        obs_x, obs_y, obs_z = tuple(positions)
-    
-        coords = convert_coords(obs_x, obs_y, obs_z, to_radians = False)
-        lon, lat, alt = coords
         
         
+        lon, lat = get_coords_from_sites(station)
         
         if (lat_min < lat < lat_max) and (lon_min < lon < lon_max):
             
