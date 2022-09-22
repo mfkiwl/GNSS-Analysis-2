@@ -76,16 +76,51 @@ def compute_roti_for_all_stations(year,
     return 
 
 
+def load_and_filter(infile, filename, hour, 
+                    minute, delta = 10, elevation = 30):
 
+    df = pd.read_csv(infile + filename, delim_whitespace = True)
+
+    df.index = pd.to_datetime(df.index)
+
+    dt = df.index[0].date()
+
+    year, month, day = dt.year, dt.month, dt.day
+
+    start = datetime.datetime(year, month, day, hour, minute, 0)
+
+    end = datetime.datetime(year, month, day, hour, minute + (delta - 1), 59)    
+    
+    return df.loc[(df.index >= start) & (df.index < end) & (df.el > elevation), :]
+
+
+def run_for_all_files(infile, hour, minute, elevation = 30):
+    
+    
+
+    _, _, files = next(os.walk(infile))
+    
+    
+    out = []
+    for filename in files:
+        try:
+            out.append(load_and_filter(infile, 
+                                       filename, 
+                                       hour, minute, 
+                                       elevation = elevation))
+        except:
+            print(filename)
+            continue
+            
+    return pd.concat(out)
 
 def main():
     year = 2014
     doy = 1
-    
+    infile = "Database/roti/2014/001/"
     ds = compute_roti_for_all_stations(year, doy)    
     
     
-main()
 
 
     
