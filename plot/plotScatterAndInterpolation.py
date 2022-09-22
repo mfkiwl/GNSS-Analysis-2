@@ -1,5 +1,6 @@
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from tecmap import  generate_matrix_tec, full_binning
+from roti_pipeline import run_for_all_files
 from plot.plotConfig import *
 from plot.plotMagneticEquator import plot_equator
 import os
@@ -8,45 +9,6 @@ import datetime
 
 year = 2014
 doy = 1
-
-
-infile = "Database/roti/2014/001/"
-
-_, _, files = next(os.walk(infile))
-
-def load_and_filter(infile, filename, hour, 
-                    minute, delta = 10, elevation = 30):
-
-    df = pd.read_csv(infile + filename, delim_whitespace = True)
-
-    df.index = pd.to_datetime(df.index)
-
-    dt = df.index[0].date()
-
-    year, month, day = dt.year, dt.month, dt.day
-
-    start = datetime.datetime(year, month, day, hour, minute, 0)
-
-    end = datetime.datetime(year, month, day, hour, minute + (delta - 1), 59)    
-    
-    return df.loc[(df.index >= start) & (df.index < end) & (df.el > elevation), :]
-
-
-def run_for_all_files(files, hour, minute, elevation = 30):
-    out = []
-    for filename in files:
-        try:
-            out.append(load_and_filter(infile, 
-                                       filename, 
-                                       hour, minute, 
-                                       elevation = elevation))
-        except:
-            print(filename)
-            continue
-            
-    return pd.concat(out)
-
-
 hour = 22
 minute = 20
 elevation = 20
@@ -105,7 +67,7 @@ def plot_scatter(df, lon_min = -80, lon_max = -30,
             y = np.arange(lat_min, lat_max, 0.5)
             levels = np.linspace(0, 2.5, 50)
             
-            img = ax.contourf(x, y, tecmap, levels = levels, cmap = "jet")
+            img = ax.contourf(x, y, martix, levels = levels, cmap = "jet")
     
         p.setting_states_map(ax, 
                              step_lat = step_lat, 
