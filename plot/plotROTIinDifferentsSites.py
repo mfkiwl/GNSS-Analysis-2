@@ -45,7 +45,15 @@ def pipeline(infile, elevation = 30):
     return time, roti
     
     
-
+def rate(x, delta = -3):
+    if  x < abs(delta):
+        return  f"{(x + delta) + 24}"
+    elif x == 0:
+        return f"{24 + delta}"
+    elif (x > 0):
+        return f"{x + delta}"
+    
+#print(rate(4))
 
 def secondary_axis(ax, delta = - 3):
     """Adding an secondory axis for show time in LT"""
@@ -54,12 +62,6 @@ def secondary_axis(ax, delta = - 3):
     ax1.set(xticks = ax.get_xticks(), 
             xlabel = "Time (LT)", 
             xlim = ax.get_xlim())
-    
-    def rate(x, delta = -3):
-        if (x > 0):
-            return f"{x + delta}"
-        else:
-            return f"{24 + delta}"
     
     ax1.xaxis.set_major_formatter(lambda x, pos: rate(x, delta = delta))
     
@@ -72,7 +74,7 @@ path_json = f'Database/json/{year}/001.json'
 dat = json.load(open(path_json))
 
     
-stations = ["recf", "alar", "pbjp", "rnna", "ceft"]
+stations = ["alar", "recf", "pbjp", "rnna", "ceft"]
 stations = stations[::-1]
 
 fig, ax = plt.subplots(figsize = (10, 15), 
@@ -94,8 +96,8 @@ for num, ax in enumerate(ax.flat):
     ax.plot(time, roti, marker = "o", markersize = 1, 
             linestyle = "none", color = "k", label = station.upper())
         
-    ax.text(10, 4, f"{station.upper()} ({round(lat, 2)}°,{round(lon, 2)}°)", 
-            transform = ax.transData)
+    ax.text(0.5, 0.7, f"{station.upper()} ({round(lat, 2)}°,{round(lon, 2)}°)", 
+            transform = ax.transAxes)
     
     ax.set(ylabel = "ROTI (TECU/min)", 
            xlabel = "Time (UT)", 
@@ -107,3 +109,7 @@ for num, ax in enumerate(ax.flat):
     
     if num == 0:
         ax.set_title("01 January 2014")
+
+
+plt.savefig('img/methods/ROTIinDifferentsSites0to24.png', 
+              dpi = 300, bbox_inches="tight")
