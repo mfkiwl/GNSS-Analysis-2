@@ -9,14 +9,15 @@ from pathlib import Path
 class paths(object):
     
     def __init__(self, year: int, doy: int, 
-                 root = str(Path.cwd()), const = "igr"):
+                 root = str(Path.cwd()), 
+                 const = "igr"):
         
         """Construct file paths from input date (year and doy)"""
         
         self.date = date_from_doy(year, doy)
         self.week, self.number = gpsweek_from_date(self.date)
         
-        self.current_path = os.path.join(root, "Database")
+        self.current_path = os.path.join(root, "GNSS\\database")
         
         self.year = str(year)
         self.doy = doy_str_format(doy)
@@ -40,6 +41,11 @@ class paths(object):
     def all_process(self):
         return os.path.join(self.current_path, "all_process", 
                             self.year, self.doy)
+    
+    @property
+    def roti(self):
+        return os.path.join(self.current_path, "roti", 
+                            self.year, self.doy)
     @property
     def dcb(self):
         return os.path.join(self.current_path, "dcb", 
@@ -48,6 +54,8 @@ class paths(object):
     def json(self):
         return os.path.join(self.current_path, "json", 
                             self.year)
+    
+    
     
     @property
     def fn_json(self):
@@ -119,4 +127,9 @@ def main():
     year = 2014
     doy = 1
     path = paths(year, doy)
-    print(path.fn_json)
+    
+    dat = json.load(open(path.fn_json))
+    
+    print(dat)
+    
+#main()
