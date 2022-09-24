@@ -4,15 +4,19 @@ import pandas as pd
 import time
 import json
 import os
-from build import paths, prns
+from build import paths, prns, folder
+from sub_ionospheric_point import convert_coords
+from ROTI import rot_and_roti
+from utils import doy_str_format
+from tqdm import tqdm
 
-
-
-def load_slant_tec(year, doy, station, prn):
+def load_slant_tec(year, doy, prn, root, station):
     
-    tec_path = f"001/{station}.txt"
+    tec_path = paths(year, doy, root).fn_process(station)
     
-    tec = pd.read_csv(tec_path, delimiter = ";", index_col = "time")
+    tec = pd.read_csv(tec_path, 
+                      delimiter = ";", 
+                      index_col = "time")
 
     tec.index = pd.to_datetime(tec.index)
     
@@ -21,15 +25,16 @@ def load_slant_tec(year, doy, station, prn):
 def join_data(year: int, 
               doy: int,
               station: str,
-              prn: str) -> pd.DataFrame:
+              prn: str, 
+              root) -> pd.DataFrame:
     
     """
     Concat the relative TEC for each piercing point 
     for one single PRN
     """
-    tec = load_slant_tec(year, doy, station, prn)
+    tec = load_slant_tec(year, doy, prn, root, station)
         
-    ipp = piercing_points_data(year, doy, station, prn = prn)
+    ipp = piercing_points_data(year, doy, station, prn, root)
         
     df = tec.join(ipp).interpolate().ffill().bfill()
 
@@ -41,24 +46,107 @@ def join_data(year: int,
     
     return df
 
-def process_for_all_stations(infile):
-    year = 2014
-    doy = 1
-    
-    _, _, files = next(os.walk("001/"))
-    
-    
-    for filename in files:
+
+def _get_coords_from_sites(dat, station):
         
-        station = filename[:4]
+    positions = dat[station]["position"] 
+    obs_x, obs_y, obs_z = tuple(positions)
+
+    coords = convert_coords(obs_x, obs_y, obs_z, to_radians = False)
+    lon, lat, alt = coords
+    
+    return lon, lat
+
+lat_min = -12
+lat_max = -2
+lon_max = -32
+lon_min = -42
+
+
+def _filter_stations_by_limits(year, doy, root, *args):
+
+    path_json = paths(year, doy, root).fn_json
+
+    dat = json.load(open(path_json))
+
+    stations = list(dat.keys())
+    
+    out_stations = []
+
+    for station in stations:
+        
+        lon, lat = _get_coords_from_sites(dat, station)
+
+        if (lat_min < lat < lat_max) and (lon_min < lon < lon_max):
+            out_stations.append(station)
+            
+    return out_stations
+
+
+def compute_roti(df, prn):
+    
+    prn_el = df.loc[(df.prn == prn), :]
+    
+    dtec = prn_el.stec.values
+    time = prn_el.index
+
+    rot, rot_tstamps, roti, roti_time = rot_and_roti(dtec, time)
+
+    roti_df = pd.DataFrame({"roti": roti, 
+                            "prn": prn}, 
+                            index = roti_time)
+
+    coords = prn_el.loc[prn_el.index.isin(roti_time), ["lat", "lon", "el"]]
+    
+    return pd.concat([roti_df, coords], axis = 1)
+
+
+from pathlib import Path
+
+
+
+#
+
+lat_min = -12
+lat_max = -2
+lon_max = -32
+lon_min = -42
+doy = 1
+year = 2014
+root = str(Path.cwd())
+
+limits = [lon_min, lon_max, lat_min, lat_max]
+
+def process_for_all_stations(year, doy, root, *limits):
+
+    stations = _filter_stations_by_limits(year, doy, root, *limits)
+    
+    
+    out_all = []
+    
+    for station in stations:
+        
         out_station = []
-        for prn in prns().gps_and_glonass:
+        
+        for prn in tqdm(prns().gps_and_glonass, desc = station):
             try:
-                out_station.append(join_data(year, doy, station, prn))
+                df_tec = join_data(year, doy, station, prn, root)
+    
+                df_roti = compute_roti(df_tec, prn)
+                 
+                out_station.append(df_roti)
             except:
+                print(prn, station)
                 continue
         
-        dat = pd.concat(out_station)
-        print(f"The station: {station} finished")
-        dat.to_csv(f"Database/all_process/2014/001_test/{filename}",
-                   index = True, sep = " ")
+        df1 = pd.concat(out_station)
+        df1["station"] = station
+        out_all.append(df1)
+        
+    df2 = pd.concat(out_all)
+    df2.to_csv(f"database/roti2/{year}/{doy_str_format(doy)}.txt",
+               index = True, sep = ";")
+    
+    
+ 
+#process_for_all_stations(year, doy, root)
