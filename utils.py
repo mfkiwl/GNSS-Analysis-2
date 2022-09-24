@@ -16,6 +16,11 @@ def doy_from_gpsweek(week: int, number: int) -> tuple:
     """Return year and doy from gps week"""
     return gnsscal.gpswd2yrdoy(week, number)
 
+def date_from_gpsweek(week, number):
+    year, doy = doy_from_gpsweek(week, number)
+    return date_from_doy(year, doy)
+
+
 def date_from_doy(year: int, doy:int) -> datetime.datetime:
     """Return date from year and doy"""
     return datetime.date(year, 1, 1) + datetime.timedelta(doy - 1)
