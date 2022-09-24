@@ -17,7 +17,7 @@ class paths(object):
         self.date = date_from_doy(year, doy)
         self.week, self.number = gpsweek_from_date(self.date)
         
-        self.current_path = os.path.join(root, "GNSS\\database")
+        self.current_path = os.path.join(root, "database")
         
         self.year = str(year)
         self.doy = doy_str_format(doy)
@@ -54,8 +54,6 @@ class paths(object):
     def json(self):
         return os.path.join(self.current_path, "json", 
                             self.year)
-    
-    
     
     @property
     def fn_json(self):
@@ -128,8 +126,8 @@ def main():
     doy = 1
     path = paths(year, doy)
     
-    dat = json.load(open(path.fn_json))
     
-    print(dat)
     
-#main()
+    print(path.roti)
+    
+main()
