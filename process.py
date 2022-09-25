@@ -107,15 +107,7 @@ from pathlib import Path
 
 #
 
-lat_min = -12
-lat_max = -2
-lon_max = -32
-lon_min = -42
-doy = 1
-year = 2014
-root = str(Path.cwd())
 
-limits = [lon_min, lon_max, lat_min, lat_max]
 
 def process_for_all_stations(year, doy, root, *limits):
 
@@ -147,6 +139,18 @@ def process_for_all_stations(year, doy, root, *limits):
     df2.to_csv(f"database/roti2/{year}/{doy_str_format(doy)}.txt",
                index = True, sep = ";")
     
-    
- 
-#process_for_all_stations(year, doy, root)
+lat_min = -12
+lat_max = -2
+lon_max = -32
+lon_min = -42
+doy = 1
+year = 2014
+root = str(Path.cwd())
+
+limits = [lon_min, lon_max, lat_min, lat_max]
+for doy in range(1, 366, 1):
+    try:
+        process_for_all_stations(year, doy, root, *limits)
+    except:
+        print(doy)
+        continue
