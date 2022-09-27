@@ -1,102 +1,83 @@
 import os
 import pandas as pd
 import numpy as np
-from build import paths
-from plotConfig import *
+from plot.plotConfig import *
 import datetime
-from utils import doy_str_format
-from terminator import *
-from __init__ import *
-from tecmap import MapMaker
 from scipy import interpolate
-from tecmap import *
+from utils import tec_fname
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 
-def plotROTImaps(i, save = True):
+def time_labels(ax, date, y = 1.0, x2 = 0.7, x1 = 0.1, fontsize = 18):
+
+    ax.text(x1, y, date.date(), 
+            rotation_mode='anchor', 
+            transform=ax.transAxes, 
+            fontsize = fontsize)
+
+    ax.text(x2, y, f"{str(date.time())} UT", 
+            rotation_mode='anchor', 
+            transform=ax.transAxes, 
+            fontsize = fontsize)
     
     
-    if save:
-        plt.ioff()
-        
-        
-    fig = plt.figure(figsize = (8, 8))
-    ax = plt.axes(projection = ccrs.PlateCarree())
-    
-    tecmap = roti_maps[i]
-    date = times[i]
-    
-    levels = np.linspace(0, 5, 50)
-    tecmap = np.where(tecmap < 0, np.nan, tecmap)
+def load_data_and_contourf(ax, infile, step = 5, 
+                           lat_min = -40.0, lat_max = 10.0, 
+                           lon_min = -80.0, lon_max = -30.0):
+
+    df = pd.read_csv(infile, delimiter = ';', 
+                     header=None).replace(-1, np.nan)
     
     
-    yy = np.linspace(-60.0, 40.0, tecmap.shape[1])
-    xx = np.linspace(-120.0, -20.0, tecmap.shape[0])
+    xmax, ymax = df.values.shape
 
-    yy = np.arange(-30.0, 10.0, 0.5)
-    xx = np.arange(-70.0, -10.0, 0.5)
+    lat = np.arange(0, xmax)*0.5 - 60
+    lon = np.arange(0, ymax)*0.5 - 90
     
-    img = ax.contourf(xx, yy, tecmap, levels = levels, cmap = "jet")
- 
-
-    cbar_ax = fig.add_axes([0.95, 0.12, 0.03, 0.75]) #xposition, yposition, espessura, altura
-
-    cb = plt.colorbar(img, cax=cbar_ax)
-                      #ticks= [0, 1, 2, 3, 4, 5])
-
-    cb.set_label(r'ROTI (TECU/min)')
-
-    setting_states_map(ax)
-
-    ax.set(title = date)
-
-    a_lon_term, a_lat_term = terminator(date, 18)
+    v = np.arange(0, 90 + step, step*0.5)
+    img = ax.contourf(lon, lat, df.values, levels = v, cmap = 'jet')
     
-    x = np.array(a_lon_term) 
-    y = np.array(a_lat_term)
-    f = interpolate.interp1d(x, y, fill_value="extrapolate")
+    axins = inset_axes(ax,
+                        width="3%",  # width: 5% of parent_bbox width
+                        height="100%",  # height: 50%
+                        loc="lower left",
+                        bbox_to_anchor=(1.05, 0., 1, 1),
+                        bbox_transform=ax.transAxes,
+                        borderpad=0,
+                        )
     
-    xnew = np.arange(-180, 180, 1)
-    ynew = f(xnew)
-    ax.plot(xnew, ynew,  "--", color = "k", lw = 3)
- 
-    da = pd.read_csv("mag_inclination_2021.txt", 
-                     delim_whitespace = True)
-
-    da = pd.pivot_table(da, values = "B", 
-                        index = "lat", columns = "lon")
-
-    ax.contour(da.columns, da.index, da.values, 1, 
-               linewidths = 2, color = 'k',
-                transform = ccrs.PlateCarree())
+    cb = plt.colorbar(img, cax = axins) #position, name labels 
     
-    if save:
-        filename = str(date).replace("-", "").replace(" ", "").replace(":", "")
-        plt.savefig(f'img/maps/{filename}.png', 
-                    dpi = 80, bbox_inches="tight")
-    else:
-        plt.show()
+    cb.set_label(r'TEC ($10^{16} / m^2$)')
 
-
-
-"""
-for i, time in enumerate(times):
+def plotTECmap(ax, tecInfile, tecFilename):
     
-    print(i, time)
-    plotROTImaps(i, save = True)
+    p = plotting()
     
+    load_data_and_contourf(ax, tecInfile + tecFilename)
+    
+    date = tec_fname(tecFilename)
+    time_labels(ax, date, y = 1.02, x2 = 0.7)
+    
+     
+    p.setting_states_map(ax, step_lat = 5, step_lon = 5,
+                         lat_min = -40.0, lat_max = 10.0, 
+                         lon_min = -80.0, lon_max = -30.0)
+    
+    p.equator(ax)
+    p.terminator(ax, date)
+    
+def main():
 
+    fig, ax = p.subplots_with_map(width = 10, heigth = 10, ncols = 1)
+    
+    tecInfile = "C:\\TEC_2014\\TEC_2014_01\\"
+    
+    
+    _, _, tec_files = next(os.walk(tecInfile))
+    
+    tecFilename = tec_files[0]
+    
+    plotTECmap(ax2, tecInfile, tecFilename)
 
-
-print(roti_maps[110].max())
-
-"""
-#pd.DataFrame(roti_maps[1]).to_excel("test_roti.x")
-
-plotROTImaps(110, save = False)
-
-
-tecmap = roti_maps[110]
-xsize, ysize = tecmap.shape
-print(xsize, ysize)
-tecmap = np.where(tecmap < 0, np.nan, tecmap)
 
