@@ -3,6 +3,11 @@ import matplotlib.dates as dates
 import cartopy.feature as cf
 import cartopy.crs as ccrs
 import numpy as np
+import json
+from plot.plotMagneticEquator import plot_equator
+import pandas as pd
+from scipy import interpolate
+import terminator as tr
 
 
 plt.rcParams.update({'font.size': 14, 
@@ -37,10 +42,11 @@ class plotting(object):
     """Plotting a map with cartopy"""
     
     @staticmethod
-    def subplots_with_map(nrows = 1, ncols = 2, ysize = 15, xsize = 8):
+    def subplots_with_map(nrows = 1, ncols = 2, heigth = 15, width = 8):
         
-        fig, ax = plt.subplots(figsize = (ysize, xsize), 
-                               ncols = ncols, nrows = nrows, 
+        fig, ax = plt.subplots(figsize = (heigth, width), 
+                               ncols = ncols, 
+                               nrows = nrows, 
                                subplot_kw={'projection': ccrs.PlateCarree()})
         
         
@@ -77,10 +83,37 @@ class plotting(object):
         ax.set_extent([lon_min, lon_max, lat_min, lat_max], 
                       crs=ccrs.PlateCarree())
 
-        ax.set_xticks(np.arange(lon_min, lon_max + step_lat, step_lon), 
+        ax.set_xticks(np.arange(lon_min, lon_max + step_lon, step_lon), 
                                   crs=ccrs.PlateCarree()) 
 
         ax.set_yticks(np.arange(lat_min, lat_max + step_lat, step_lat), 
                       crs=ccrs.PlateCarree())
+    
+    @staticmethod
+    def equator(ax, infile = "Database/geo/Inclination2021.txt"):
+        eq = pd.read_csv(infile, 
+                         delim_whitespace = True)
+        
+        eq = pd.pivot_table(eq, columns = "lon", index = "lat", values = "B")
+        
+        cs = ax.contour(eq.columns, eq.index, eq.values, 1, 
+                   linewidths = 3, colors = "red", 
+                    transform = ccrs.PlateCarree())
+        
+        cs.cmap.set_over('red')
+        
+        
+    @staticmethod
+    def terminator(ax, date, angle = 18):
+        
+        a_lon_term, a_lat_term = tr.terminator(date, 18)
+    
+        x = np.array(a_lon_term) 
+        y = np.array(a_lat_term)
+        f = interpolate.interp1d(x, y, fill_value="extrapolate")
+        
+        xnew = np.arange(-180, 180, 1)
+        ynew = f(xnew)
+        ax.plot(xnew, ynew,  "--", color = "k", lw = 3)
     
     
