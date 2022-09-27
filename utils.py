@@ -61,6 +61,19 @@ def doy_str_format(date: int) -> str:
         
     return  str_doy
 
+
+def tec_fname(filename):
+    """Convert TEC filename (EMBRACE format) to datetime"""
+    args = filename.split('_')
+    date = args[1][:4] + '-' + args[1][4:6]+ '-' +args[1][-2:] 
+    time = args[-1].replace('.txt', '')
+    time = time[:2] + ':' + time[2:]
+    
+    return datetime.datetime.strptime(date + ' ' + time, "%Y-%m-%d %H:%M")
+
+
+print(tec_fname("TECMAP_20140101_0000.txt"))
+
 class fname_attrs(object):
     
     """Attributes of filenames (rinex, orbit and bias)"""
