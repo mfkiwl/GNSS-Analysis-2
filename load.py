@@ -1,19 +1,13 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Aug  9 10:24:16 2022
-
-@author: Luiz
-"""
-
 import georinex as gr
 import pandas as pd
 import numpy as np
 import datetime
 import os
-from utils import doy_str_format
 import json 
 import ast
 from build import paths, folder
+
+
 
 def get_infos_from_rinex(ds) -> dict:
     
@@ -97,6 +91,7 @@ def interpolate_orbits(infile, prn, parameter = "position"):
     res.columns.names = [prn]
     
     return res.interpolate(method = 'spline', order = 5)
+
 
 
 

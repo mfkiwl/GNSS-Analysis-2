@@ -1,5 +1,5 @@
 import sys
-from utils import *
+from gnss_utils import date_from_doy, gpsweek_from_date
 import os
 os.path.dirname(sys.executable)
 from pathlib import Path
@@ -20,7 +20,7 @@ class paths(object):
         self.current_path = os.path.join(root, "database")
         
         self.year = str(year)
-        self.doy = doy_str_format(doy)
+        self.doy = self.date.strftime("%j")
         self.ext_rinex = self.year[-2:] + "o"
         self.const = const
     
@@ -119,15 +119,3 @@ def folder(path_to_create: str):
         print(f"Creation of the directory {path_to_create} failed")
     
     return path_to_create
-
-def main():
-    
-    year = 2014
-    doy = 1
-    path = paths(year, doy)
-    
-    
-    
-    print(path.roti)
-    
-main()
