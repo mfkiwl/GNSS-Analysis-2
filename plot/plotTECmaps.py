@@ -1,25 +1,14 @@
 import os
 import pandas as pd
 import numpy as np
-from plot.plotConfig import *
+from plotConfig import *
 import datetime
 from scipy import interpolate
-from utils import tec_fname
+from gnss_utils import tec_fname
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 
-def time_labels(ax, date, y = 1.0, x2 = 0.7, x1 = 0.1, fontsize = 18):
 
-    ax.text(x1, y, date.date(), 
-            rotation_mode='anchor', 
-            transform=ax.transAxes, 
-            fontsize = fontsize)
-
-    ax.text(x2, y, f"{str(date.time())} UT", 
-            rotation_mode='anchor', 
-            transform=ax.transAxes, 
-            fontsize = fontsize)
-    
     
 def load_data_and_contourf(ax, infile, step = 5, 
                            lat_min = -40.0, lat_max = 10.0, 
@@ -46,26 +35,51 @@ def load_data_and_contourf(ax, infile, step = 5,
                         borderpad=0,
                         )
     
-    cb = plt.colorbar(img, cax = axins) #position, name labels 
+    cb = plt.colorbar(img, cax = axins) 
     
     cb.set_label(r'TEC ($10^{16} / m^2$)')
 
-def plotTECmap(ax, tecInfile, tecFilename):
+def plotTECmap(ax, tecInfile, tecFilename, step = 10):
     
     p = plotting()
-    
+
+
     load_data_and_contourf(ax, tecInfile + tecFilename)
-    
+
     date = tec_fname(tecFilename)
-    time_labels(ax, date, y = 1.02, x2 = 0.7)
-    
-     
-    p.setting_states_map(ax, step_lat = 5, step_lon = 5,
+    ax.set(title = date)
+
+    step = 10
+    p.setting_states_map(ax, step_lat = step, step_lon = step,
                          lat_min = -40.0, lat_max = 10.0, 
                          lon_min = -80.0, lon_max = -30.0)
-    
+
     p.equator(ax)
     p.terminator(ax, date)
+
+
+    infos = {"Cariri": [-36.55, -7.38], 
+             "Fortaleza": [-38.45, -3.9]}
+
+    angles =  [180, 33]
+    colors = ["red", "black"]
+    names = list(infos.keys())
+    markers = ["s", "^"]
+
+    for num in range(2):
+        
+        angle = angles[num]
+        name = names[num]
+        color = colors[num]
+        marker = markers[num]
+        circle_with_legend(ax, angle, 250, name, color, infos, marker)
+        
+        
+
+    ax.plot([-42, -32, -32, -42, -42], [-12, -12, -2, -2, -12],
+             color='black', linewidth = 3, marker='.',
+             transform=ccrs.PlateCarree(), #remove this line to get straight lines
+             )
     
 def main():
 
@@ -78,6 +92,8 @@ def main():
     
     tecFilename = tec_files[0]
     
-    plotTECmap(ax2, tecInfile, tecFilename)
+    plotTECmap(ax, tecInfile, tecFilename)
+    
+    
 
 
