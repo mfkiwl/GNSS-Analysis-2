@@ -96,7 +96,8 @@ def compute_roti(df, prn):
                             "prn": prn}, 
                             index = roti_time)
 
-    coords = prn_el.loc[prn_el.index.isin(roti_time), ["lat", "lon", "el"]]
+    coords = prn_el.loc[prn_el.index.isin(roti_time), 
+                        ["lat", "lon", "el"]]
     
     return pd.concat([roti_df, coords], axis = 1)
 
@@ -105,7 +106,6 @@ from pathlib import Path
 
 
 
-#
 
 
 
@@ -139,18 +139,57 @@ def process_for_all_stations(year, doy, root, *limits):
     df2.to_csv(f"database/roti2/{year}/{doy_str_format(doy)}.txt",
                index = True, sep = ";")
     
+
+
+def run_for_all_days():
+    lat_min = -12
+    lat_max = -2
+    lon_max = -32
+    lon_min = -42
+    year = 2014
+    root = "C:\\Users\\Public\\"
+
+    limits = [lon_min, lon_max, lat_min, lat_max]
+    for doy in range(1, 366, 1):
+        try:
+            process_for_all_stations(year, doy, root, *limits)
+        except:
+            print(doy)
+            continue
+import sys       
+import os
+os.path.dirname(sys.executable)
+from pathlib import Path       
+year = 2014
+doy = 1
 lat_min = -12
 lat_max = -2
 lon_max = -32
 lon_min = -42
-doy = 1
-year = 2014
-root = str(Path.cwd())
-
 limits = [lon_min, lon_max, lat_min, lat_max]
-for doy in range(1, 366, 1):
-    try:
-        process_for_all_stations(year, doy, root, *limits)
-    except:
-        print(doy)
-        continue
+#path_json = paths(year, doy, root)
+
+stations = _filter_stations_by_limits(year, doy, root, *limits)
+
+
+out_all = []
+
+for station in stations:
+    
+    out_station = []
+    
+    for prn in tqdm(prns().gps_and_glonass, desc = station):
+        try:
+            df_tec = join_data(year, doy, station, prn, root)
+
+            df_roti = compute_roti(df_tec, prn)
+             
+            out_station.append(df_roti)
+        except:
+            print(prn, station)
+            continue
+    
+    df1 = pd.concat(out_station)
+    df1["station"] = station
+
+#df = process_for_all_stations(year, doy, root = str(Path.cwd()), *limits)

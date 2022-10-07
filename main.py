@@ -44,7 +44,7 @@ def run_for_all_files(path):
     out_dict = {}
     create_folder = folder(path.process)
         
-    for filename in files[:1]:
+    for filename in files:
         
         if filename.endswith(f".{path.ext_rinex}"):
             try:
@@ -58,14 +58,13 @@ def run_for_all_files(path):
     return out_dict, pd.concat(out_prns, axis = 1)
 
 
-def run_for_all_days(year, root, start = 1, 
-                     end = 365, save_prn = True):
+def run_for_all_days(year, root, start = 1, end = 365, save_prn = True):
     
     prn_in_year = []
     
     for doy in range(start, end + 1):
     
-        path = paths(year, doy)
+        path = paths(year, doy, root = root)
         
         json_dat, prn_dat = run_for_all_files(path)
         
@@ -77,7 +76,7 @@ def run_for_all_days(year, root, start = 1,
          
     if save_prn:
         prns_dat = pd.concat(prn_in_year)
-        prn_dat.to_csv(f"prns_in_{year}", sep = " ")
+        prn_dat.to_csv(f"prns_in_{year} ", sep = " ")
         
 
 start_time = time.time()
