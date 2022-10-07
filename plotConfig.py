@@ -12,9 +12,8 @@ import json
 
 import shapely.geometry as sgeom
 from cartopy.geodesic import Geodesic
-#from plotMagneticEquator import plot_equator
 
-plt.rcParams.update({'font.size': 14, 
+plt.rcParams.update({'font.size': 12, 
                      'axes.linewidth' : 0.5,
                      'grid.linewidth' : 0.5,
                      'lines.linewidth' : 1.,
@@ -73,12 +72,12 @@ class plotting(object):
                  crs=ccrs.PlateCarree())
 
         states_provinces = cf.NaturalEarthFeature(
-                        category='cultural',
-                        name='admin_1_states_provinces_lines',
-                        scale='50m',
-                        facecolor='none')
+                            category='cultural',
+                            name='admin_1_states_provinces_lines',
+                            scale='50m',
+                            facecolor='none')
 
-
+#
         ax.add_feature(states_provinces, edgecolor='black')
         ax.add_feature(cf.COASTLINE, edgecolor='black', lw = 2) 
         ax.add_feature(cf.BORDERS, linestyle='-', edgecolor='black')
@@ -116,11 +115,16 @@ class plotting(object):
     
         x = np.array(a_lon_term) 
         y = np.array(a_lat_term)
-        f = interpolate.interp1d(x, y, fill_value="extrapolate")
+        f = interpolate.interp1d(x, y, fill_value = "extrapolate")
         
-        xnew = np.arange(-180, 180, 1)
+        delta = 5
+        lonmin = -180
+        lonmax = 180
+        
+        xnew = np.arange(lonmin, lonmax + 0.5 * delta, delta, dtype=np.float32)
         ynew = f(xnew)
-        ax.plot(xnew, ynew,  "--", color = "k", lw = 3)
+        #ax.plot(xnew, ynew,  "--", color = "k", lw = 3)
+        ax.plot(x, y,  "--", color = "k", lw = 3)
     
     
 
