@@ -1,89 +1,81 @@
 from utils import doy_str_format
 from ROTI import *
 import matplotlib.dates as dates 
+import pandas as pd
 import matplotlib.pyplot as plt
-from dcb_calculator import create_prns
-from __init__ import *
+import numpy as np
 
+infile = "Database/all_process/2014/001_test/"
 
-station = "ceft"
-year = 2014
-out = []
-
-for doy in range(184, 187): 
-
-    filename  = f"{station}{doy_str_format(doy)}"
-    infile = f"Database/all_process/{year}/{station}/{filename}.txt"
-
-    data = pd.read_csv(infile, delim_whitespace = True)
-
-    data.index = pd.to_datetime(data.time)
+def plot_tec_rate(df, prn, station, save = False):
     
-    out.append(data)
-
-
-df_all = pd.concat(out)
-
-df = out[0]
-
-dt_start = df_all.index[0]
-dt_end = df_all.index[-1]
-
-
-def plotSequential(df, prn, col = "rTEC", save = False):
-
-    fig, ax = plt.subplots(figsize = (10, 10), 
+    if save:
+        plt.ioff()
+    
+    df1 = df.loc[(df.el > 30) & (df.prn == prn), :]
+    date = df1.index[0].strftime("%d/%m/%Y")
+    time = df1.index
+    stec = df1.stec.values
+    
+    
+    title = f"{prn.upper()} ({station.upper()}) - {date}"
+    
+    fig, ax = plt.subplots(figsize = (10, 6), 
                            nrows = 4, 
                            sharex = True)
+    
+    plt.subplots_adjust(hspace = 0.0)
+    
+    
+
+    args = dict(color = "k", lw = 1)
+    ax[0].plot(df1.el, **args)
+    ax[0].set(ylabel = "Elevation (°)", 
+              title = title)
+
+    ax[1].plot(time, stec, **args)
+    ax[1].set(ylabel = "STEC (TECU)")
+    
+    #indexes = find_gaps(df1).gaps
+    dtec = df1["stec"] - df1["stec"].rolling("2.5min").mean()
+    rot, rot_time, roti, roti_time = rot_and_roti(dtec, time)
+    #rtime, rot = func_rot(stec, time)
+    #drot = rot - running(rot)
+
+    ax[2].plot(rot_time, rot, **args)
+    ax[2].set(ylabel = "ROT")
+
+    #roti_time, roti_values = func_roti(rtime, drot, step = 4, length = 1)
+    ax[3].plot(roti_time, roti, **args)
 
 
-    plt.subplots_adjust(hspace = 0)
+    delta_lim = timedelta(hours = 2)
+    ax[3].set(ylabel = "ROTI \n (TECU/min)", 
+              ylim = [0, 5], 
+              xlim = [df1.index[0] - delta_lim, 
+                      df1.index[-1] + delta_lim], 
+              xlabel = "time (UT)")
 
-    df = df.loc[(df.prn == prn) & (df.el > 30), :]
-
-    wargs = dict(color = 'k', lw = 1) ##008AC9
-
-    ax[0].plot(df["el"], **wargs)
-    ax[1].plot(df[col], **wargs)
-
-    time = df.index
-    stec = df[col].values
-
-    rot, time_rot, roti, time_roti = rot_and_roti(stec, time)
-
-    time_rot = pd.to_datetime(time_rot)
-    time_roti = pd.to_datetime(time_roti)
-
-    ax[2].plot(time_rot, rot, **wargs)
-    ax[3].plot(time_roti, roti, **wargs)
-
-    ax[3].xaxis.set_major_formatter(dates.DateFormatter('%H:%M'))
+    ax[3].xaxis.set_major_formatter(dates.DateFormatter('%H'))
     ax[3].xaxis.set_major_locator(dates.HourLocator(interval = 1))
-
-
-    for num, label in enumerate(["Elevation", col.upper(), 
-                                 "ROT", "ROTI"]):
-        ax[num].set(ylabel = label)
-
-
-    ax[3].set(xlabel = "Time (UT)", ylim = [0, 5])
     
-    ax[2].set(ylim = [-1, 1])
-
-    date = str(time[0].date())
-
-    fig.suptitle(f"{date}, PRN: {prn}", y = 0.9)
-
+    plt.rcParams.update({'font.size': 12})  
     if save:
-        filename  = f"{prn}_{date.replace('-', '')}"
+        print("Saving...", prn)
+        fig.savefig(f"img/roti/{station}/{prn}.png", 
+                   dpi = 100, facecolor="white", transparent=False)
         
-        fig.savefig(f'img/ROTI/{filename}.png', 
-                    dpi = 100,
-                    bbox_inches="tight")
+        plt.clf()   
+        plt.close()
+    else:
+        plt.show()
+        
+        
+station = filename.replace(".txt", "")
 
-def main():
-    
-    
-    prn = "G06"        #G06, G18, G22
-    
-    plotSequential(df, prn, col = "stec", save = False)
+df = pd.read_csv(infile + filename, 
+         delim_whitespace = True, 
+         index_col = "time")
+
+df.index = pd.to_datetime(df.index)
+plot_tec_rate(df, prn, station, save = False)
