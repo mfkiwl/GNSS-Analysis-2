@@ -98,7 +98,7 @@ class prns:
         return prn
     
     @staticmethod
-    def prn_list(constelation = "G", number = 33):
+    def prn_list(constelation = "G", number = 32):
         call = prns()
         return [call.format_prn(constelation, num) 
                 for num in range(1, number + 1)]
