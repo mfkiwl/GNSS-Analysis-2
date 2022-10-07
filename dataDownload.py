@@ -2,12 +2,19 @@ import requests
 from bs4 import BeautifulSoup 
 import datetime
 import os
-from utils import doy_str_format, gpsweek_from_doy_and_year, date_from_gpsweek, date_from_doy
+from gnss_utils import gpsweek_from_doy_and_year, date_from_gpsweek, date_from_doy
 import zipfile
 from build import paths, folder
+from tqdm import tqdm    
+
+infos = {"IBGE" : 'https://geoftp.ibge.gov.br/informacoes_sobre_posicionamento_geodesico/rbmc/dados/', 
+         "IGS": 'https://igs.bkg.bund.de/root_ftp/IGS/products/'}
+
 
 
 def unzip_and_delete(files, year, path_to_save, delete = True):
+    
+    """Deleting after unzipping files"""
     
     for filename in files:
        
@@ -38,12 +45,11 @@ def unzip_and_delete(files, year, path_to_save, delete = True):
         
 
 
-infos = {"IBGE" : 'https://geoftp.ibge.gov.br/informacoes_sobre_posicionamento_geodesico/rbmc/dados/', 
-         "IGS": 'https://igs.bkg.bund.de/root_ftp/IGS/products/'}
-
 
 
 def URL(year, doy, typing = "IGS", const = "G"):
+    
+    """Build url and filenames"""
     
     week, number = gpsweek_from_doy_and_year(year, doy)
     
@@ -62,7 +68,9 @@ def URL(year, doy, typing = "IGS", const = "G"):
     return filename, url
 
 
-def download(url, href, path_to_save = "", chunk_size = 1024):
+def download(url, href, path_to_save = "", 
+             chunk_size = 1024):
+    """Function for download from link"""
     remote_file = requests.get(url + href)
     total_length = int(remote_file.headers.get('content-length', 0))
 
@@ -75,9 +83,15 @@ def download(url, href, path_to_save = "", chunk_size = 1024):
                 
     return out_file
                 
-from tqdm import tqdm    
+
         
-def request_and_download(year, doy, path_to_save, typing = "IGS", const = "G"):
+def request_and_download(year, 
+                         doy, 
+                         path_to_save, 
+                         typing = "IGS", 
+                         const = "G"):
+    
+    """Request website and make downloads"""
     
     filename, url = URL(year, doy, typing = typing, const = const)
     
@@ -100,28 +114,22 @@ def request_and_download(year, doy, path_to_save, typing = "IGS", const = "G"):
     return link_names
 
     
-def main():
-    
-    
-    year = 2014
-
-    
-    
-    for doy in [100, 140]:
+def run_for_many_days(year = 2014, 
+                      day_start = 1, 
+                      day_end = 366, 
+                      path_to_save = ""):
+    """Running for many days in year"""
+    for doy in range(day_start, day_end, 1):
        
-        path_to_save = "" #C:\\Users\\Public\\Database\\orbit\\2014\\igl\\" #folder(path_to_create, root = root)
-        
         
         try:
             files = request_and_download(year, doy, path_to_save, 
                                      typing = "IGS", const = "R")
         except:
+            continue
             print(date_from_doy(year, doy))
             
             
         unzip_and_delete(files, year, path_to_save, delete = True)
         
-
-    #print(files)
-
-main()
+#C:\\Users\\Public\\Database\\orbit\\2014\\igl\\" #folder(path_to_create, root = root)
