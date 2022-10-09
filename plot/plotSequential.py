@@ -22,9 +22,9 @@ def plot_tec_rate(df, prn, station,
     stec = df1.stec.values
     
     
-    title = f"{prn.upper()} ({station.upper()}) - {date}"
+    title = f"{station.upper()} (PRN = {prn.upper()}) - {date}"
     
-    fig, ax = plt.subplots(figsize = (8, 10), 
+    fig, ax = plt.subplots(figsize = (6, 8), 
                            nrows = 4, 
                            sharex = True)
     
@@ -35,10 +35,14 @@ def plot_tec_rate(df, prn, station,
     args = dict(color = "k", lw = 1)
     ax[0].plot(df1.el, **args)
     ax[0].set(ylabel = "Elevação (°)", 
-              title = title, ylim = [0, 90])
+              title = title, 
+              ylim = [20, 100], 
+              yticks = np.arange(10, 100, 20))
 
     ax[1].plot(time, stec, **args)
-    ax[1].set(ylabel = "STEC (TECU)", ylim = [-40, 10])
+    ax[1].set(ylabel = "STEC (TECU)", 
+              ylim = [-40, 10], 
+              yticks = np.arange(-30, 10, 10))
 
     #indexes = find_gaps(df1).gaps
     dtec = df1["stec"] - df1["stec"].rolling("2.5min").mean()
@@ -46,7 +50,9 @@ def plot_tec_rate(df, prn, station,
    
 
     ax[2].plot(rot_time, rot, **args)
-    ax[2].set(ylabel = "ROT (TECU/min)", ylim = [-12, 12])
+    ax[2].set(ylabel = "ROT (TECU/min)", 
+              ylim = [-12, 12], 
+              yticks = np.arange(-10, 12, 5))
     
 
     ax[3].plot(roti_time, roti, **args)
@@ -63,6 +69,11 @@ def plot_tec_rate(df, prn, station,
     ax[3].xaxis.set_major_formatter(dates.DateFormatter('%H'))
     ax[3].xaxis.set_major_locator(dates.HourLocator(interval = 1))
     
+    labels = ["(a)", "(b)", "(c)", "(d)"]
+    for num, ax in enumerate(ax.flat):
+        
+        ax.text(0.9, 0.8, labels[num], transform = ax.transAxes)
+    
     
     plt.rcParams.update({'font.size': 12})  
     if save:
@@ -71,8 +82,8 @@ def plot_tec_rate(df, prn, station,
             path_to_save = "img/roti/{station}/"
         
             
-        fig.savefig(f"{path_to_save}{prn}.png", 
-                   dpi = 100, 
+        fig.savefig(f"{path_to_save}Parameters_{station}_{prn}.png", 
+                   dpi = 300, 
                    facecolor="white", 
                    transparent=False)
         
@@ -96,6 +107,11 @@ def main():
     path_to_save = "G:\\My Drive\\Doutorado\\Modelos_Latex_INPE\\docs\\Proposal\\Figures\\methods\\"
     
     
-    plot_tec_rate(df, prn, 
-                  station, save = False, 
-                  path_to_save=path_to_save)
+    plot_tec_rate(df, 
+                  prn, 
+                  station, 
+                  save = True, 
+                  path_to_save = path_to_save)
+    
+    
+main()
