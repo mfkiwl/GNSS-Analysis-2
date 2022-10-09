@@ -42,29 +42,61 @@ plt.rcParams.update({'font.size': 12,
                                                      '#9e9e9e'])
                          })   
     
-class plotting(object):
+class mapping(object):
     
     """Plotting a map with cartopy"""
     
-    @staticmethod
-    def subplots_with_map(nrows = 1, ncols = 2, heigth = 15, width = 8):
+    def __init__(self, nrows = 1, 
+                        ncols = 1, 
+                        heigth = 15, 
+                        width = 8, 
+                        ):
         
-        fig, ax = plt.subplots(figsize = (heigth, width), 
-                               ncols = ncols, 
-                               nrows = nrows, 
-                               subplot_kw={'projection': ccrs.PlateCarree()})
+        self.heigth = heigth
+        self.width = width
+        self.ncols = ncols
+        self.nrows = nrows
+    
+    
+    def subplots_with_map(self, step_lat = 10, 
+                                step_lon = 10,
+                                lat_min = -40.0, 
+                                lat_max = 10.0, 
+                                lon_min = -80.0, 
+                                lon_max = -30.0):
         
+        fig, ax = plt.subplots(figsize = (self.heigth, self.width), 
+                               ncols = self.ncols, 
+                               nrows = self.nrows, 
+                               subplot_kw = {'projection': ccrs.PlateCarree()})
+        if self.ncols != 1 or self.nrows != 1:
+            for ax in ax.flat:
+                self.mapping_attrs(ax, 
+                                   step_lat = step_lat, 
+                                   step_lon = step_lon,
+                                   lat_min =lat_min, 
+                                   lat_max =lat_max, 
+                                   lon_min = lon_min, 
+                                   lon_max = lon_max)
+                
+        else:
+            self.mapping_attrs(ax,
+                               step_lat = step_lat, 
+                               step_lon = step_lon,
+                               lat_min =lat_min, 
+                               lat_max =lat_max, 
+                               lon_min = lon_min, 
+                               lon_max = lon_max)
         
         return fig, ax
     
     @staticmethod
-    def setting_states_map(ax, 
-                           step_lat = 10, 
-                           step_lon = 10,
-                           lat_min = -40.0, 
+    def mapping_attrs(ax, step_lat = 10, 
+                            step_lon = 10,
+                            lat_min = -40.0, 
                             lat_max = 10.0, 
                             lon_min = -80.0, 
-                            lon_max = -30.0):    
+                            lon_max = -30.0):
         
         ax.set_global()
 
@@ -77,19 +109,17 @@ class plotting(object):
                             scale='50m',
                             facecolor='none')
 
-#
         ax.add_feature(states_provinces, edgecolor='black')
         ax.add_feature(cf.COASTLINE, edgecolor='black', lw = 2) 
         ax.add_feature(cf.BORDERS, linestyle='-', edgecolor='black')
 
         ax.set(ylabel = 'Latitude (°)', xlabel = 'Longitude (°)')
         
-
         ax.set_extent([lon_min, lon_max, lat_min, lat_max], 
                       crs=ccrs.PlateCarree())
 
         ax.set_xticks(np.arange(lon_min, lon_max + step_lon, step_lon), 
-                                  crs=ccrs.PlateCarree()) 
+                      crs=ccrs.PlateCarree()) 
 
         ax.set_yticks(np.arange(lat_min, lat_max + step_lat, step_lat), 
                       crs=ccrs.PlateCarree())
