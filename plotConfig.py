@@ -65,30 +65,13 @@ class mapping(object):
                                 lon_min = -80.0, 
                                 lon_max = -30.0):
         
-        fig, ax = plt.subplots(figsize = (self.heigth, self.width), 
+        fig, axs = plt.subplots(figsize = (self.heigth, self.width), 
                                ncols = self.ncols, 
                                nrows = self.nrows, 
                                subplot_kw = {'projection': ccrs.PlateCarree()})
-        if self.ncols != 1 or self.nrows != 1:
-            for ax in ax.flat:
-                self.mapping_attrs(ax, 
-                                   step_lat = step_lat, 
-                                   step_lon = step_lon,
-                                   lat_min =lat_min, 
-                                   lat_max =lat_max, 
-                                   lon_min = lon_min, 
-                                   lon_max = lon_max)
-                
-        else:
-            self.mapping_attrs(ax,
-                               step_lat = step_lat, 
-                               step_lon = step_lon,
-                               lat_min =lat_min, 
-                               lat_max =lat_max, 
-                               lon_min = lon_min, 
-                               lon_max = lon_max)
         
-        return fig, ax
+    
+        return fig, axs
     
     @staticmethod
     def mapping_attrs(ax, step_lat = 10, 
