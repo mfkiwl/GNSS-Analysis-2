@@ -9,6 +9,7 @@ from scipy import interpolate
 import terminator as tr
 from sub_ionospheric_point import convert_coords
 import json
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 import shapely.geometry as sgeom
 from cartopy.geodesic import Geodesic
@@ -140,7 +141,22 @@ class mapping(object):
         ax.plot(x, y,  "--", color = "k", lw = 3)
     
     
-
+def colorbar_setting(img, ax, ticks):
+    
+    """Color bar settings"""
+    axins = inset_axes(
+                ax,
+                width="3%",  # width: 5% of parent_bbox width
+                height="100%",  # height: 50%
+                loc="lower left",
+                bbox_to_anchor=(1.05, 0., 1, 1),
+                bbox_transform=ax.transAxes,
+                borderpad=0,
+            )
+    
+    cb = plt.colorbar(img, cax = axins, ticks = ticks)
+    
+    cb.set_label(r'ROTI (TECU/min)')
 
 
 
