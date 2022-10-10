@@ -139,6 +139,17 @@ class mapping(object):
         ynew = f(xnew)
         #ax.plot(xnew, ynew,  "--", color = "k", lw = 3)
         ax.plot(x, y,  "--", color = "k", lw = 3)
+        
+def text_painels(axs, x = 0.8, y = 0.8, fontsize = 14):
+    
+    chars = list(map(chr, range(97, 123)))
+    
+    for num, ax in enumerate(axs.flat):
+        char = chars[num]
+        ax.text(x, y, f"({char})", 
+                transform = ax.transAxes, 
+                fontsize = fontsize)
+
     
     
 def colorbar_setting(img, ax, ticks):
@@ -199,7 +210,7 @@ def save(infile = "img/methods/InstrumentionLocations.png"):
     plt.savefig(infile, dpi = 500, bbox_inches = "tight")
     
 def main():   
-    p = plotting()
+    p = mapping()
     
     fig, ax = p.subplots_with_map(width = 15, heigth = 15, ncols = 1)
     
@@ -210,6 +221,9 @@ def main():
     infos = {"Cariri": [-36.55, -7.38], 
              "Fortaleza": [-38.45, -3.9]}
     
+
+
+
 
 
 
