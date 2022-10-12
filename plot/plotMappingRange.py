@@ -7,7 +7,7 @@ from sub_ionospheric_point import convert_coords
 import datetime 
 from sys import exit
 
-def get_coords_from_sites(station):
+def get_coords_from_sites(station, dat):
 
      coords = dat[station]["position"]
      obs_x, obs_y, obs_z = tuple(coords)
@@ -18,6 +18,26 @@ def get_coords_from_sites(station):
      return lon, lat
  
     
+def plot_square_area(ax, 
+                   lat_min = -12, 
+                   lat_max = -2, 
+                   lon_max = -32, 
+                   lon_min = -42):
+    
+    
+    """Plotting square area by coords limits"""
+    
+    ax.plot([lon_min, lon_max, lon_max, lon_min, lon_min], 
+            [lat_min, lat_min, lat_max, lat_max, lat_min],
+             color='black', 
+             linewidth = 1, 
+             marker='.',
+             transform=ccrs.PlateCarree(), 
+             )
+    return 
+
+
+
 def plotStations(ax, 
                  date = datetime.date(2014, 1, 1), 
                  color = "green", 
@@ -39,7 +59,7 @@ def plotStations(ax,
 
     for station in stations:
             
-        lon, lat = get_coords_from_sites(station)
+        lon, lat = get_coords_from_sites(station, dat)
         
         
         if ((lat_min < lat < lat_max) and
@@ -93,6 +113,22 @@ def circle_with_legend(ax, angle, height, name, color,
      
      ax.legend(loc = "lower right")
  
+    
+def plot_range_stations(ax, 
+                        angles = [180, 33], 
+                        colors = ["red", "blue"], 
+                        names = ["Cariri", "Fortaleza"], 
+                        markers = ["s", "^"]):
+    for num in range(2):
+        
+        angle = angles[num]
+        name = names[num]
+        color = colors[num]
+        marker = markers[num]
+       
+        circle_with_legend(ax, angle, 250, name, color, marker)
+        
+        
 def save(infile = "img/methods/InstrumentionLocations.png"):     
   
     plt.savefig(infile, dpi = 500, bbox_inches = "tight")
@@ -108,22 +144,8 @@ def main():
                          lon_max = -32, lon_min = -42)
     
     
+    plot_range_stations(ax)
     
-    angles =  [180, 33]
-    colors = ["red", "blue"]
-    names = ["Cariri", "Fortaleza"]
-    markers = ["s", "^"]
-    
-    
-    
-    for num in range(2):
-        
-        angle = angles[num]
-        name = names[num]
-        color = colors[num]
-        marker = markers[num]
-       
-        circle_with_legend(ax, angle, 250, name, color, marker)
         
     plotStations(ax)
     ax.legend(["Cariri \n (imageador)", 
