@@ -110,6 +110,8 @@ class mapping(object):
     
     @staticmethod
     def equator(ax, infile = "G://My Drive//Python//data-analysis//GNSS//database//geo//Inclination2021.txt"):
+        """Plotting geomagnetic equator"""
+        
         eq = pd.read_csv(infile, 
                          delim_whitespace = True)
         
@@ -124,24 +126,27 @@ class mapping(object):
         
     @staticmethod
     def terminator(ax, date, angle = 18):
-        
+        """Plotting terminator line from datetime"""
         a_lon_term, a_lat_term = tr.terminator(date, 18)
     
         x = np.array(a_lon_term) 
         y = np.array(a_lat_term)
-        f = interpolate.interp1d(x, y, fill_value = "extrapolate")
+        f = interpolate.interp1d(x, y, 
+                                 fill_value = "extrapolate")
         
-        delta = 5
+        delta = 1
         lonmin = -180
         lonmax = 180
         
-        xnew = np.arange(lonmin, lonmax + 0.5 * delta, delta, dtype=np.float32)
+        xnew = np.arange(lonmin, 
+                         lonmax + 0.5 * delta, delta,
+                         dtype=np.float32)
         ynew = f(xnew)
         #ax.plot(xnew, ynew,  "--", color = "k", lw = 3)
         ax.plot(x, y,  "--", color = "k", lw = 3)
         
 def text_painels(axs, x = 0.8, y = 0.8, fontsize = 14):
-    
+    """Plot text for enumerate painels by letter"""
     chars = list(map(chr, range(97, 123)))
     
     for num, ax in enumerate(axs.flat):
@@ -170,47 +175,15 @@ def colorbar_setting(img, ax, ticks):
     cb.set_label(r'ROTI (TECU/min)')
 
 
-
-def circle_range(ax, longitude, latitude, 
-                 radius = 500, color = "gray"):
-             
-    gd = Geodesic()
-
-    cp = gd.circle(lon = longitude, 
-                   lat = latitude, 
-                   radius = radius * 1000.)
-    
-    geoms = [sgeom.Polygon(cp)]
-
-    ax.add_geometries(geoms, crs=ccrs.PlateCarree(), 
-                      edgecolor = 'black', color = color,
-                      alpha = 0.2, label = 'radius')
-
-def circle_with_legend(ax, angle, height, name, color, infos, 
-                       marker = "s"):
-     
-     radius = height * np.sin(np.radians(angle)) 
-          
-     if radius < 1:
-         radius = 500
-     
-     lon, lat = tuple(infos[name])
-
-     circle_range(ax, lon, lat, radius = radius, 
-                  color = color)
-         
-     ax.plot(lon, lat, marker = marker, label =  name, 
-             color = color, markersize = 10,
-             transform = ccrs.PlateCarree())
-     
-     ax.legend(loc = "lower right")
  
 def save(infile = "img/methods/InstrumentionLocations.png"):     
-  
+    """Save figure"""
     plt.savefig(infile, dpi = 500, bbox_inches = "tight")
     
 def main():   
     p = mapping()
+    
+    #fig, ax = p.subplots_with_map()
     
     fig, ax = p.subplots_with_map(width = 15, heigth = 15, ncols = 1)
     
@@ -227,29 +200,5 @@ def main():
 
 
 
-def plotStations(ax, year = 2014, 
-             doy = 1, 
-             color = "green", 
-             markersize = 15, 
-             marker = "o",   
-             lat_min = -12, lat_max = -2, lon_max = -32, lon_min = -42):
-    
-    
-    path_json = f'Database/json/{year}/001.json'
 
-    dat = json.load(open(path_json))
-
-    stations = list(dat.keys())
-
-    for station in stations:
-        
-        
-        lon, lat = get_coords_from_sites(station)
-        
-        if (lat_min < lat < lat_max) and (lon_min < lon < lon_max):
-            
-            ax.plot(lon, lat, marker = marker, markersize = markersize, color = color)
-            
-            ax.text(lon + 0.09, lat, station.upper(), 
-                    transform = ccrs.PlateCarree(), color = "k")
             
