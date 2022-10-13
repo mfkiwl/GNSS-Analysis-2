@@ -7,7 +7,7 @@ from scipy import interpolate
 from gnss_utils import tec_fname
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
-
+import plot.plotMappingRange as r 
 
     
 def load_data_and_contourf(ax, infile, step = 5, 
@@ -39,61 +39,43 @@ def load_data_and_contourf(ax, infile, step = 5,
     
     cb.set_label(r'TEC ($10^{16} / m^2$)')
 
-def plotTECmap(ax, tecInfile, tecFilename, step = 10):
+def plotTECmap(ax, p, tecInfile, tecFilename, step = 5):
     
-    p = plotting()
-
 
     load_data_and_contourf(ax, tecInfile + tecFilename)
 
     date = tec_fname(tecFilename)
+    
     ax.set(title = date)
 
-    step = 10
-    p.setting_states_map(ax, step_lat = step, step_lon = step,
+    p.mapping_attrs(ax, step_lat = step, step_lon = step,
                          lat_min = -40.0, lat_max = 10.0, 
                          lon_min = -80.0, lon_max = -30.0)
 
     p.equator(ax)
     p.terminator(ax, date)
-
-
-    infos = {"Cariri": [-36.55, -7.38], 
-             "Fortaleza": [-38.45, -3.9]}
-
-    angles =  [180, 33]
-    colors = ["red", "black"]
-    names = list(infos.keys())
-    markers = ["s", "^"]
-
-    for num in range(2):
-        
-        angle = angles[num]
-        name = names[num]
-        color = colors[num]
-        marker = markers[num]
-        circle_with_legend(ax, angle, 250, name, color, infos, marker)
-        
-        
-
-    ax.plot([-42, -32, -32, -42, -42], [-12, -12, -2, -2, -12],
-             color='black', linewidth = 3, marker='.',
-             transform=ccrs.PlateCarree(), #remove this line to get straight lines
-             )
+    r.plot_range_stations(ax)
+    r.plot_square_area(ax)
     
-def main():
 
-    fig, ax = p.subplots_with_map(width = 10, heigth = 10, ncols = 1)
+
+   
+def main():
+    
+    p = mapping(width = 10, heigth = 10, ncols = 1)
+
+    fig, ax = p.subplots_with_map()
     
     tecInfile = "C:\\TEC_2014\\TEC_2014_01\\"
     
     
     _, _, tec_files = next(os.walk(tecInfile))
     
-    tecFilename = tec_files[0]
+    date = datetime.datetime(2014, 1, 1, 0, 0)
+    tecFilename = [f for f in tec_files if tec_fname(f) ==
+                   date][0]
     
-    plotTECmap(ax, tecInfile, tecFilename)
-    
+    plotTECmap(ax, p, tecInfile, tecFilename, step = 20)
     
 
-
+main()
