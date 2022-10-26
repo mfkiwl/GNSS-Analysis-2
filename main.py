@@ -7,7 +7,12 @@ from tqdm import tqdm
 import pandas as pd
 
 
-def run_for_all_prns(path, filename, save = True):
+def run_for_all_prns(path:str, 
+                     filename: str, 
+                     save:bool = True):
+    
+    
+    """Read RINEX file with, get compute relative TEC"""
     
     infile = os.path.join(path.rinex, filename)
     
@@ -27,16 +32,22 @@ def run_for_all_prns(path, filename, save = True):
             continue
 
     all_prns = pd.concat(out_prns, axis = 1)
-
+    
+    
+    station = filename[:4]
+    
+    prn_data = pd.DataFrame({station: prns_list})
     if save:
-        station = filename[:4]
+        
         path_to_save = path.fn_process(station)
         all_prns.to_csv(path_to_save, sep = ";", index = True)
         
-    return prns_list, data.attrs
+    return prn_data, data.attrs
 
 
 def run_for_all_files(path):
+    
+    """Enter with the root path and run for all files in directory"""
     
     _, _, files = next(os.walk(path.rinex))
     
@@ -48,46 +59,40 @@ def run_for_all_files(path):
         
         if filename.endswith(f".{path.ext_rinex}"):
             try:
-                prns, attr_dat = run_for_all_prns(path, filename)
-                out_dict.update(attr_dat)
-                out_prns.append(pd.DataFrame({filename[:4]: prns}))
+                prn_data, attr_dat = run_for_all_prns(path, filename)
+                out_dict.update(attr_dat) #json file
+                out_prns.append(prn_data) #prns data
             except:
-                print(f"Station {filename} not work")
                 continue
+    all_prns = pd.concat(out_prns, axis = 1)
+    
+    return out_dict, all_prns
 
-    return out_dict, pd.concat(out_prns, axis = 1)
 
-
-def run_for_all_days(year, root, start = 1, end = 365, save_prn = True):
+def run_for_all_days(year, root, 
+                     start = 1, 
+                     end = 365, save_prn = True):
     
     prn_in_year = []
     
     for doy in range(start, end + 1):
-    
-        path = paths(year, doy, root = root)
         
-        json_dat, prn_dat = run_for_all_files(path)
-        
-        prn_dat["doy"] =  doy
-    
-        prn_in_year.append(prn_dat)
-        
-        save_attrs(path.fn_json, json_dat)
+        try:
+            path = paths(year, doy, root = root)
+            
+            json_dat, all_prns = run_for_all_files(path)
+            
+            all_prns.to_csv(path.prns, sep = ",")
+            save_attrs(path.fn_json, json_dat)
+            
+        except:
+            continue
          
-    if save_prn:
-        prns_dat = pd.concat(prn_in_year)
-        prn_dat.to_csv(f"prns_in_{year} ", sep = " ")
+        
         
 
 start_time = time.time()
  
-year = 2014
-root = "C:\\Users\\Public\\"
-
-run_for_all_days(year, root, start = 1, end = 365, save_prn = True)
-
-        
-
 
 print("--- %s hours ---" % ((time.time() - start_time) / 3600))
 
