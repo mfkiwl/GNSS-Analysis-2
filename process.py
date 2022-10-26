@@ -6,9 +6,7 @@ import json
 import os
 from build import paths, prns, folder
 from sub_ionospheric_point import convert_coords
-from ROTI import rot_and_roti
-from utils import doy_str_format
-from tqdm import tqdm
+from rot_roti import roti
 import sys       
 import os
 os.path.dirname(sys.executable)
@@ -17,7 +15,13 @@ from pathlib import Path
 
 
 
-def load_slant_tec(year, doy, prn, root, station):
+def load_slant_tec(year, 
+                   doy, 
+                   prn, 
+                   station, 
+                   root = str(Path.cwd())):
+    
+    """Read processed STEC data"""
     
     tec_path = paths(year, doy, root).fn_process(station)
     
@@ -33,13 +37,13 @@ def join_data(year: int,
               doy: int,
               station: str,
               prn: str, 
-              root) -> pd.DataFrame:
+              root = str(Path.cwd())) -> pd.DataFrame:
     
     """
     Concat the relative TEC for each piercing point 
     for one single PRN
     """
-    tec = load_slant_tec(year, doy, prn, root, station)
+    tec = load_slant_tec(year, doy, prn, station, root)
         
     ipp = piercing_points_data(year, doy, station, prn, root)
         
@@ -54,122 +58,63 @@ def join_data(year: int,
     return df
 
 
-def _get_coords_from_sites(dat, station):
+
+def get_prns(year, station, doy):
+
+    path_prns = paths(year, doy).prns
     
-    """Get coords and convert them"""
-        
-    positions = dat[station]["position"] 
-    obs_x, obs_y, obs_z = tuple(positions)
-
-    coords = convert_coords(obs_x, obs_y, obs_z, to_radians = False)
-    lon, lat, alt = coords
+    df = pd.read_csv(path_prns)
     
-    return lon, lat
+    return df.loc[:, station].values
 
 
+def compute_roti(year, doy, station, 
+                 prn, elevation = 30):
+    
+    
+    tec = join_data(year, doy, station, prn)
+    
+    
+    df1 = tec.loc[tec.el > elevation, :]
+    
+    stec = df1.stec.values
+    time = df1.index
+    
+    dtime, droti = roti(stec, time)
+    
+    new_dat = df1.loc[df1.index.isin(dtime), 
+                            ["lat", "lon", "el"]]
+    
+    new_dat["roti"] = droti
+    
+    new_dat["prn"] = prn
+    
+    return new_dat
+
+def run_for_all_prns(year, doy, station):
+
+    prns = get_prns(year, station, doy)
+    
+    
+    dat_all_prns = []
+    for prn in prns:
+        dat_all_prns.append(compute_roti(year, doy, station, 
+                     prn))
+    
+    df = pd.concat(dat_all_prns)
+    
+    df["station"] = station
+    
+    return df
 
 year = 2014
 doy = 1
-lat_min = -12
-lat_max = -2
-lon_max = -32
-lon_min = -42
-limits = [lon_min, lon_max, lat_min, lat_max]
+
+station = "alar"
+
+infile = "database/process/2014/001/"
+_, _, files = next(os.walk(infile))
 
 
-
-
-def _filter_stations_by_limits(year, doy, root, *args):
-    
-    """Use Json file with coords of each station and filter the region limits"""
-
-    path_json = paths(year, doy, root).fn_json
-
-    dat = json.load(open(path_json))
-
-    stations = list(dat.keys())
-    
-    out_stations = []
-
-    for station in stations:
-        
-        lon, lat = _get_coords_from_sites(dat, station)
-
-        if (lat_min < lat < lat_max) and (lon_min < lon < lon_max):
-            out_stations.append(station)
-            
-    return out_stations
-
-
-def compute_roti(df, prn):
-    
-    prn_el = df.loc[(df.prn == prn), :]
-    
-    dtec = prn_el.stec.values
-    time = prn_el.index
-
-    rot, rot_tstamps, roti, roti_time = rot_and_roti(dtec, time)
-
-    roti_df = pd.DataFrame({"roti": roti, 
-                            "prn": prn}, 
-                            index = roti_time)
-
-    coords = prn_el.loc[prn_el.index.isin(roti_time), 
-                        ["lat", "lon", "el"]]
-    
-    return pd.concat([roti_df, coords], axis = 1)
-
-
-
-
-
-
-def process_for_all_stations(year, doy, root, *limits):
-
-    stations = _filter_stations_by_limits(year, doy, root, *limits)
-    
-    
-    out_all = []
-    
-    for station in stations:
-        
-        out_station = []
-        
-        for prn in tqdm(prns().gps_and_glonass, desc = station):
-            try:
-                df_tec = join_data(year, doy, station, prn, root)
-    
-                df_roti = compute_roti(df_tec, prn)
-                 
-                out_station.append(df_roti)
-            except:
-                print(prn, station)
-                continue
-        
-        df1 = pd.concat(out_station)
-        df1["station"] = station
-        out_all.append(df1)
-        
-    df2 = pd.concat(out_all)
-    df2.to_csv(f"database/roti2/{year}/{doy_str_format(doy)}.txt",
-               index = True, sep = ";")
-    
-lat_min = -12
-lat_max = -2
-lon_max = -32
-lon_min = -42
-
-
-
-limits = [lon_min, lon_max, lat_min, lat_max]
-
-def run_for_all_days(year = 2014, root = "C:\\Users\\Public\\", *limits):
-   
-    for doy in range(1, 366, 1):
-        try:
-            process_for_all_stations(year, doy, root, *limits)
-        except:
-            print("Doesnt work", doy)
-            continue
-
+print(files)
 
