@@ -43,11 +43,25 @@ def unzip_and_delete(files, year, path_to_save, delete = True):
         except:
             continue
         
+def download(url, href, 
+             path_to_save = "", 
+             chunk_size = 1024):
+    """Function for download from link"""
+    remote_file = requests.get(url + href)
+    total_length = int(remote_file.headers.get('content-length', 0))
+
+    out_file = os.path.join(path_to_save, href)
+    
+    with open(out_file, 'wb') as f:
+        for chunk in remote_file.iter_content(chunk_size = chunk_size): 
+            if chunk: 
+                f.write(chunk) 
+                
+    return out_file
 
 
 
-
-def URL(year, doy, typing = "IGS", const = "G"):
+def orbit_url(year, doy, typing = "IGS", const = "G"):
     
     """Build url and filenames"""
     
@@ -67,69 +81,87 @@ def URL(year, doy, typing = "IGS", const = "G"):
         
     return filename, url
 
+def rinex_url(year, doy, network = "IBGE"):
+    date = date_from_doy(year, doy)
+    doy_str = date.strftime("%j")
+    return f"{infos[network]}/{year}/{doy_str}/"
 
-def download(url, href, path_to_save = "", 
-             chunk_size = 1024):
-    """Function for download from link"""
-    remote_file = requests.get(url + href)
-    total_length = int(remote_file.headers.get('content-length', 0))
 
-    out_file = os.path.join(path_to_save, href)
+def create_path(year, doy, root = "C:\\"):
+
+    date = date_from_doy(year, doy)
+    doy_str = date.strftime("%j")
     
-    with open(out_file, 'wb') as f:
-        for chunk in remote_file.iter_content(chunk_size = chunk_size): 
-            if chunk: 
-                f.write(chunk) 
-                
-    return out_file
-                
+    return os.path.join(root, str(year), doy_str)
+
 
         
-def request_and_download(year, 
-                         doy, 
+def request_and_download(url,
                          path_to_save, 
-                         typing = "IGS", 
-                         const = "G"):
+                         select_files = None):
     
-    """Request website and make downloads"""
+    """Request website from url (RINEX or sp3) and download it """
     
-    filename, url = URL(year, doy, typing = typing, const = const)
+    
     
     r = requests.get(url)
     s = BeautifulSoup(r.text, "html.parser")
 
     parser = s.find_all('a', href = True)
-    
+
     link_names = []
 
-    for link in tqdm(parser, desc = f"{typing}-{const}-{doy}"):
-
-        if filename in link:
-            href = link['href']
+    for link in parser:
+       
+       href = link['href']
+       
+       rules = [f in href for f in select_files]
+       
+       if any(rules):
             
             link_names.append(href)
+            print("download...", href)
             file = download(url, href, path_to_save)
             
             
     return link_names
 
-    
+
 def run_for_many_days(year = 2014, 
                       day_start = 1, 
-                      day_end = 366, 
-                      path_to_save = ""):
-    """Running for many days in year"""
+                      day_end = 366, root = "D:\\database\\rinex\\"):
+    
+    
+    """Running for whole year"""
+    
     for doy in range(day_start, day_end, 1):
        
-        
         try:
-            files = request_and_download(year, doy, path_to_save, 
-                                     typing = "IGS", const = "R")
+            url = rinex_url(year, doy, network = "IBGE")
+            path_to_create = create_path(year, doy, root = root)
+            path_to_save = folder(path_to_create)
+
+            select_stations = ['alar', 'bair', 'brft', 'ceeu', 
+                               'ceft', 'cesb', 'crat', 'pbcg', 
+                               'pbjp', 'peaf', 'pepe', 'recf',
+                               'rnmo', 'rnna', 'seaj']
+
+
+
+            files = request_and_download(url,
+                                 path_to_save, 
+                                 select_file = select_stations)
+            
         except:
+            print("it was not possible download...", date_from_doy(year, doy))
             continue
-            print(date_from_doy(year, doy))
+            
             
             
         unzip_and_delete(files, year, path_to_save, delete = True)
         
 #C:\\Users\\Public\\Database\\orbit\\2014\\igl\\" #folder(path_to_create, root = root)
+
+run_for_many_days(year = 2014, 
+                      day_start = 1, 
+                      day_end = 366)
