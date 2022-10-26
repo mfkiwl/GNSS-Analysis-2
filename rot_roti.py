@@ -1,139 +1,90 @@
-import datetime 
-import numpy as np
+from datetime import datetime, timedelta
 import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 
-lat_min = -30.0 
-lat_max = 10.0 
-lon_min = -70.0 
-lon_max = -10.0
-
-
-def generate_matrix_tec(lat_list, lon_list, roti_list, 
-                        lat_min, lat_max, 
-                        lon_min, lon_max, step_grid = 0.5, bad_value = -1):
+def find_gaps(time, gap_delta = 15):
     
-    tec = roti_list.copy()
+    df = pd.DataFrame(time.values, columns = ['times'])
+
+    df["deltas"] = df['times'].diff()[1:]
+
+    df["check_gap"] = np.where(df.deltas > 
+                               timedelta(seconds = 2 * gap_delta), True, False)
+
+    df["count_gaps"] = df["check_gap"].cumsum()
+
+    index_of_gaps = [df.loc[df["count_gaps"] == num, :].index for 
+                     num in np.unique(df['count_gaps'])]
+
+    return index_of_gaps
+
+
+def rot_func(stec, time, length = 1):
+
+    delta_tec = (np.roll(stec, -1) - stec)
+    delta_time = np.array((np.roll(time, -1) - time).astype('timedelta64[s]')).astype('float64')
     
-    lat_step = int((lat_max - lat_min) / step_grid)
-    lon_step = int((lon_max - lon_min) / step_grid)
-
-    counter = np.zeros((lat_step, lon_step))
-    matrix = np.zeros((lat_step, lon_step))
-    rms = np.zeros((lat_step, lon_step))
-
-    idx_lat = []
-    idx_lon = []
+    step_range = slice(length, len(delta_tec) - length)
     
-    for num in range(len(lat_list)):            
-
-        # A função do numpy retorna floats (104.0) enquanto o math retorna integers (104)
-        i_lat = np.floor((lat_list[num] - lat_min) / step_grid).astype(int)
-        i_lon = np.floor((lon_list[num] - lon_min) / step_grid).astype(int)
-
-        idx_lat.append(i_lat)
-        idx_lon.append(i_lon)
-
-        if (0 <= i_lat < lat_step) and (0 <= i_lon < lon_step):
-
-            matrix[i_lat, i_lon] = (matrix[i_lat, i_lon] + tec[num])
-            rms[i_lat, i_lon] = (rms[i_lat, i_lon] + tec[num]**2)
-            counter[i_lat, i_lon] = (counter[i_lat, i_lon] + 1)
-           
-
-    matrix[matrix != 0] = np.divide(matrix[matrix != 0], counter[matrix != 0])
-    rms[rms != 0] = np.sqrt(np.divide(rms[rms != 0], counter[rms != 0]))
+    rot_vals = (delta_tec[step_range] / (delta_time[step_range]))*60.
     
-    # testar diferentes condições para essa substituição
-    matrix[matrix == 0] = bad_value
-    rms[rms == 0] = bad_value
-    
-    return matrix, rms 
+    return rot_vals
 
+def running(x, N):
+    return np.convolve(x, np.ones(N)/N, mode='same')
 
-def full_binning(matrix_raw, BAD_VALUE = -1, max_binning = 10):
-
+def rot(stec, time, length = 1, gap_delta = 15, N = 10):
     
-    n_lon = matrix_raw.shape[1]
-    n_lat = matrix_raw.shape[0]
-    result_matrix = np.full([n_lat, n_lon], BAD_VALUE)
-
-    current_matrix = matrix_raw
-
-    if max_binning > 0:
-        for n_binning in range(1, max_binning + 1):
-            for i_lat in range(n_binning, (n_lat - n_binning - 1)):
-                for i_lon in range(n_binning, (n_lon - n_binning - 1)):
-
-                    sub_mat_raw = matrix_raw[(i_lat - n_binning):(i_lat + n_binning),
-                                (i_lon - n_binning):(i_lon + n_binning)]
-                    
-                    total_valid_tec_raw = (sub_mat_raw != BAD_VALUE).sum()
-                    
-                    
-                    if (total_valid_tec_raw > 0) & (result_matrix[i_lat, i_lon] == BAD_VALUE):
-                        sub_mat = current_matrix[(i_lat - n_binning):(i_lat + n_binning),
-                                 (i_lon - n_binning):(i_lon + n_binning)]
-                        
-                        
-                        total_sub_mat = sub_mat[sub_mat != BAD_VALUE].sum()
-                        total_valid_tec = (sub_mat != BAD_VALUE).sum()
-                        
-                        
-                        tec_medio = BAD_VALUE
-
-                        if total_valid_tec > 0:
-                            tec_medio = total_sub_mat / total_valid_tec
-                            
-                        result_matrix[i_lat, i_lon] = tec_medio
-                        
-            current_matrix = result_matrix
-    else:
-        result_matrix = matrix_raw
-
-    return result_matrix
-
-class make_maps:
+    gaps = find_gaps(time, 
+                     gap_delta = gap_delta)
     
-    """Separe the data in specifics time range for construct the TEC MAP"""
+    rot_out = []
+    time_out = []
     
-    def __init__(self, df, hour, minute, delta = 10):
-    
-        dt = df.index[0].date()
-        year, month, day = dt.year, dt.month, dt.day
-    
-        self.start = datetime.datetime(year, month, day, hour, minute, 0)
-        self.end = datetime.datetime(year, month, day, hour, minute + (delta - 1), 59)
-    
-        self.res = df.loc[(df.index >= self.start) & (df.index <= self.end)]
-    
-        self.lat = self.res.lat.values
-        self.lon = self.res.lon.values
-        self.roti = self.res.roti.values
-    
-    def matrix(self, 
-               lat_min = -30.0, lat_max = 10.0, 
-               lon_min = -70.0, lon_max = -10.0):
-        """Returns tec and rms matrizes"""
+    for num in range(len(gaps)):
         
-        self.lat_min = lat_min
-        self.lat_max = lat_max
-        self.lon_min = lon_min
-        self.lon_max = lon_max
+   
+        t = time[gaps[num]]
+        s = stec[gaps[num]]
+        
+        
+        delta_tec = (np.roll(s, -1) - s)
+        delta_time = np.array((np.roll(t, -1) - t).astype('timedelta64[s]')).astype('float64')
     
-        return generate_matrix_tec(self.lat, self.lon, self.roti, 
-                                   lat_min = self.lat_min, 
-                                   lat_max = self.lat_max, 
-                                   lon_min = self.lon_min, 
-                                   lon_max = self.lon_max)
+        step_range = slice(length, len(delta_tec) - length)
+    
+        nt = t[length: len(t) - length]
+
+        rot_out.extend((delta_tec[step_range] / (delta_time[step_range]))*60.)
+        time_out.extend(nt)
+        
+    if N:
+        rot = running(rot_out, N) -  rot_out
+    else:
+        rot = rot_out
+    return time_out, rot
+
+
+
+def roti(stec, time, step = 4, length = 1):
+
+    dtime = [(i.hour + i.minute/60. + i.second/(3600.)) 
+                    for i in time]
+
+    out_roti = []
+    out_time = []
+
+    rtime, rot_1 = rot(stec, time, length = 1)
     
     
-    def interpolate(self, bad_value = -1):
-        tec_matrix, rms_matrix = self.matrix()
-        return full_binning(tec_matrix, 
-                            BAD_VALUE = bad_value, 
-                            max_binning = 10)
+    for j in range(step, len(rot_1) - step, step):
 
+        avg_of_power = np.mean(np.power(rot_1[j - step: j + step], 2))
+        power_of_avg = np.power(np.mean(rot_1[j - step: j + step]), 2)
 
+        out_time.append(rtime[j])
+        
+        out_roti.append(np.sqrt(avg_of_power - power_of_avg))
 
-
-
+    return out_time, out_roti
