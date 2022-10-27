@@ -9,25 +9,23 @@ from pathlib import Path
 class paths(object):
     
     def __init__(self, year: int, doy: int, 
-                 root = str(Path.cwd()), 
-                 const = "igr"):
+                 root = str(Path.cwd())):
         
         """Construct file paths from input date (year and doy)"""
         
         self.date = date_from_doy(year, doy)
         self.week, self.number = gpsweek_from_date(self.date)
-        
-        self.current_path = os.path.join(root, "database")
+        self.root = root
+        self.current_path = os.path.join(self.root, "database")
         
         self.year = str(year)
         self.doy = self.date.strftime("%j")
         self.ext_rinex = self.year[-2:] + "o"
-        self.const = const
+        
     
-    @property
-    def orbit(self):
+    def orbit(self, const = "igr"):
         return os.path.join(self.current_path, "orbit", 
-                            self.year, self.const)
+                            self.year, const)
     
     @property
     def rinex(self):
@@ -45,7 +43,7 @@ class paths(object):
     @property
     def roti(self):
         return os.path.join(self.current_path, "roti", 
-                            self.year, self.doy)
+                            self.year)
     @property
     def dcb(self):
         return os.path.join(self.current_path, "dcb", 
@@ -54,16 +52,24 @@ class paths(object):
     def json(self):
         return os.path.join(self.current_path, "json", 
                             self.year)
-    
+    @property
+    def prns(self):
+        fname = f"{self.doy}.txt"
+        return os.path.join(self.current_path, "prns", 
+                            self.year, fname)
     @property
     def fn_json(self):
         fname = f"{self.doy}.json"
         return os.path.join(self.json, fname)
-    
+
     @property
-    def fn_orbit(self):
-        fname = f"{self.const}{self.week}{self.number}.sp3"
-        return os.path.join(self.orbit, fname)
+    def fn_roti(self):
+        fname = f"{self.doy}.txt"
+        return os.path.join(self.roti, fname)
+    
+    def fn_orbit(self, const = "igr"):
+        fname = f"{const}{self.week}{self.number}.sp3"
+        return os.path.join(self.orbit(const), fname)
     
     def fn_process(self, station = "alar"):
         fname =  f"{station}.txt"
@@ -119,3 +125,5 @@ def folder(path_to_create: str):
         print(f"Creation of the directory {path_to_create} failed")
     
     return path_to_create
+
+
