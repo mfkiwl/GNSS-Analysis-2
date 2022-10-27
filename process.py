@@ -13,15 +13,13 @@ from gnss_utils import date_from_doy
 
 
 
-def load_slant_tec(year, 
-                   doy, 
+def load_slant_tec(path,
                    prn, 
-                   station, 
-                   root = str(Path.cwd())):
+                   station) -> pd.DataFrame:
     
     """Read processed STEC data"""
     
-    tec_path = paths(year, doy, root).fn_process(station)
+    tec_path = path.fn_process(station)
     
     tec = pd.read_csv(tec_path, 
                       delimiter = ";", 
@@ -31,19 +29,18 @@ def load_slant_tec(year,
     
     return tec.loc[:, [prn]].dropna()
 
-def join_data(year: int, 
-              doy: int,
-              station: str,
-              prn: str, 
-              root = str(Path.cwd())) -> pd.DataFrame:
+def join_data(path: str,
+              prn: str,
+              station: str) -> pd.DataFrame:
     
     """
     Concat the relative TEC for each piercing point 
     for one single PRN
     """
-    tec = load_slant_tec(year, doy, prn, station, root)
+    
+    tec = load_slant_tec(path, prn, station)
         
-    ipp = piercing_points_data(year, doy, station, prn, root)
+    ipp = piercing_points_data(path, station, prn)
         
     df = tec.join(ipp).interpolate().ffill().bfill()
 
@@ -57,20 +54,21 @@ def join_data(year: int,
 
 
 
-def get_prns(year, station, doy):
+def get_prns(path, station)-> pd.DataFrame:
 
-    path_prns = paths(year, doy).prns
+    path_prns = path.prns
     
     df = pd.read_csv(path_prns)
     
     return df.loc[:, station].values
 
 
-def compute_roti(year, doy, station, 
-                 prn, elevation = 30):
+def compute_roti(path, 
+                 prn,
+                 station, 
+                 elevation = 30) -> pd.DataFrame:
     
-    
-    tec = join_data(year, doy, station, prn)
+    tec = join_data(path, prn, station)
     
     
     df1 = tec.loc[tec.el > elevation, :]
@@ -89,18 +87,16 @@ def compute_roti(year, doy, station,
     
     return new_dat
 
-def run_for_all_prns(year, doy, station):
+def run_for_all_prns(path, station):
 
-    prns = get_prns(year, station, doy)
-    
+    prns = get_prns(path, station)
     
     dat_all_prns = []
+    
     for prn in tqdm(prns, desc = station):
         try:
-            dat_all_prns.append(compute_roti(year, doy, station, 
-                     prn))
-            
-        except:
+            dat_all_prns.append(compute_roti(path, prn, station))           
+        except Exception:
             continue
     
     df = pd.concat(dat_all_prns)
@@ -110,7 +106,7 @@ def run_for_all_prns(year, doy, station):
     return df
 
 
-def run_for_all_stations(path, year, doy):
+def run_for_all_stations(path, save = True):
     
     
     _, _, files = next(os.walk(path.process))
@@ -120,40 +116,43 @@ def run_for_all_stations(path, year, doy):
     for filename in files:
         station = filename[:4]
         
-        all_stations.append(run_for_all_prns(year, doy, station))
+        all_stations.append(run_for_all_prns(path, station))
     
      
     df = pd.concat(all_stations)
-        
-    df.to_csv(path.fn_roti, sep = ";", index = True)
-
     
+    if save:
+        df.to_csv(path.fn_roti, sep = ";", index = True)
+
+    return df
 
 
 def run_for_all_days(year:str, 
                      root:str, 
                      start:int = 1, 
-                     end:int = 365, 
-                     save_prn:bool = True):
+                     end:int = 365):
     
-    prn_in_year = []
     
     for doy in range(start, end + 1):
         
         try:
-            path = paths(year, doy, root = "C:\\")
+            print("starting...", doy)
+            path = paths(year, doy, root = root)
             
-            run_for_all_stations(path, year, doy)
+            run_for_all_stations(path)
             
-        except:
+        except Exception:
             continue
          
 start_time = time.time()
 
 year = 2014
-root = "D://"
-run_for_all_days(year, root)
-
+root = "D:\\"
+doy = 1
+#run_for_all_days(year, root)
+path = paths(year, doy, root = root)
+#run_for_all_stations(path, year, doy)
+print(path.fn_orbit(const = "igl"))
 
 print("--- %s hours ---" % ((time.time() - start_time) / 3600))
 
