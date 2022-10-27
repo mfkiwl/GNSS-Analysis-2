@@ -43,7 +43,8 @@ def delete_files(infile, extension = ".22d"):
                 print(f"Could not delete {filename}")
 
 
-
+    
+    
 def tec_fname(filename):
     """Convert TEC filename (EMBRACE format) to datetime"""
     args = filename.split('_')
@@ -89,9 +90,22 @@ class fname_attrs(object):
             if "MGX" in args[0]:
                 self.year = int(args[1][:4])
                 self.doy = int(args[1][4:7])
-                
-                
-        self.date = date_from_doy(self.year, self.doy)
+    
+    @property
+    def date(self):
+        return date_from_doy(self.year, self.doy)
          
     
-  
+def main():
+   
+    
+    infile = "D:/database/orbit/2014/igl/"
+    
+    _, _, files = next(os.walk(infile))
+
+    dates_igl = [fname_attrs(filename).date for filename in files]
+    print(dates_igl)
+    
+    
+        
+        
