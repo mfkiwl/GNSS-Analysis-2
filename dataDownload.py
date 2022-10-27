@@ -21,7 +21,7 @@ def unzip_and_delete(files, year, path_to_save, delete = True):
         zip_path = os.path.join(path_to_save, filename)
         ext_year = str(year)[-2:] 
         
-        extensions = [ext_year + "o", ext_year + "d"]
+        extensions = [ext_year + "o", ext_year + "d", "sp3"]
         
         try:
             zip_file = zipfile.ZipFile(zip_path, 'r') 
@@ -71,15 +71,32 @@ def orbit_url(year, doy, typing = "IGS", const = "G"):
 
     if typing == "IGS":
 
-        if const == "G":
+        if const == "igr":
             url += f"orbits/{week}/"
-            filename = f"igr{week}{number}.sp3.Z"
+            filename = f"{const}{week}{number}.sp3.Z"
 
-        elif const == "R":
+        elif const == "igl":
             url += f"glo_orbits/{week}/"
-            filename = f"igl{week}{number}.sp3.Z"
+            filename = f"{const}{week}{number}.sp3.Z"
         
     return filename, url
+
+
+
+
+def check_files(year = 2014):
+    for doy in range(1, 366):
+        
+        try:
+            fname, url = orbit_url(year, 
+                                   doy, 
+                                   typing = "IGS", 
+                                   const = "igr")
+            print(fname)
+        except:
+            print(date_from_doy(year, doy))
+
+
 
 def rinex_url(year, doy, network = "IBGE"):
     date = date_from_doy(year, doy)
@@ -115,21 +132,24 @@ def request_and_download(url,
        
        href = link['href']
        
-       rules = [f in href for f in select_files]
+       if not isinstance(select_files, list):
+          select_files = [select_files] 
        
+       rules = [f in href for f in select_files]
        if any(rules):
-            
-            link_names.append(href)
-            print("download...", href)
-            file = download(url, href, path_to_save)
-            
+             
+           link_names.append(href)
+           print("download...", href)
+           file = download(url, href, path_to_save)
+         
             
     return link_names
 
 
 def run_for_many_days(year = 2014, 
                       day_start = 1, 
-                      day_end = 366, root = "D:\\database\\rinex\\"):
+                      day_end = 366, 
+                      root = "D:\\"):
     
     
     """Running for whole year"""
@@ -137,10 +157,17 @@ def run_for_many_days(year = 2014,
     for doy in range(day_start, day_end, 1):
        
         try:
-            url = rinex_url(year, doy, network = "IBGE")
-            path_to_create = create_path(year, doy, root = root)
-            path_to_save = folder(path_to_create)
-
+            #url = rinex_url(year, doy, network = "IBGE")
+            
+            fname, url = orbit_url(year, doy, 
+                                   typing = "IGS", 
+                                   const = "igr")
+            #url = urld + fname 
+            
+            #print(url)
+            #path_to_create = create_path(year, doy, root = root)
+            #path_to_save = folder(path_to_create)
+            path_to_save = paths(year, doy, root = root).orbit(const="igr")
             select_stations = ['alar', 'bair', 'brft', 'ceeu', 
                                'ceft', 'cesb', 'crat', 'pbcg', 
                                'pbjp', 'peaf', 'pepe', 'recf',
@@ -149,19 +176,24 @@ def run_for_many_days(year = 2014,
 
 
             files = request_and_download(url,
-                                 path_to_save, 
-                                 select_file = select_stations)
+                                         path_to_save, 
+                                         select_files = fname)
             
         except:
-            print("it was not possible download...", date_from_doy(year, doy))
+            print("it was not possible download...", 
+                  date_from_doy(year, doy))
             continue
             
             
             
         unzip_and_delete(files, year, path_to_save, delete = True)
         
-#C:\\Users\\Public\\Database\\orbit\\2014\\igl\\" #folder(path_to_create, root = root)
 
-run_for_many_days(year = 2014, 
-                      day_start = 1, 
-                      day_end = 366)
+root = "C:\\"
+
+run_for_many_days(day_end = 3, root = root)
+
+
+
+
+       
