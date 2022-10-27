@@ -1,17 +1,15 @@
 from sub_ionospheric_point import piercing_points_data
-from differentialCodeBias import get_cdb_value
 import pandas as pd
 import time
-import json
 import os
-from build import paths, prns, folder
-from sub_ionospheric_point import convert_coords
+from build import paths, folder
 from rot_roti import roti
 import sys       
 import os
 os.path.dirname(sys.executable)
 from pathlib import Path       
-
+from tqdm import tqdm
+from gnss_utils import date_from_doy
 
 
 
@@ -97,9 +95,13 @@ def run_for_all_prns(year, doy, station):
     
     
     dat_all_prns = []
-    for prn in prns:
-        dat_all_prns.append(compute_roti(year, doy, station, 
+    for prn in tqdm(prns, desc = station):
+        try:
+            dat_all_prns.append(compute_roti(year, doy, station, 
                      prn))
+            
+        except:
+            continue
     
     df = pd.concat(dat_all_prns)
     
@@ -107,14 +109,52 @@ def run_for_all_prns(year, doy, station):
     
     return df
 
+
+def run_for_all_stations(path, year, doy):
+    
+    
+    _, _, files = next(os.walk(path.process))
+    
+    all_stations = []
+        
+    for filename in files:
+        station = filename[:4]
+        
+        all_stations.append(run_for_all_prns(year, doy, station))
+    
+     
+    df = pd.concat(all_stations)
+        
+    df.to_csv(path.fn_roti, sep = ";", index = True)
+
+    
+
+
+def run_for_all_days(year:str, 
+                     root:str, 
+                     start:int = 1, 
+                     end:int = 365, 
+                     save_prn:bool = True):
+    
+    prn_in_year = []
+    
+    for doy in range(start, end + 1):
+        
+        try:
+            path = paths(year, doy, root = "C:\\")
+            
+            run_for_all_stations(path, year, doy)
+            
+        except:
+            continue
+         
+start_time = time.time()
+
 year = 2014
-doy = 1
-
-station = "alar"
-
-infile = "database/process/2014/001/"
-_, _, files = next(os.walk(infile))
+root = "D://"
+run_for_all_days(year, root)
 
 
-print(files)
+print("--- %s hours ---" % ((time.time() - start_time) / 3600))
+
 
