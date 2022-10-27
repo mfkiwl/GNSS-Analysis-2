@@ -180,9 +180,9 @@ def TEC_projection(elevation):
 
 
 
-def piercing_points_data(year, doy,     
+def piercing_points_data(path,     
                          station, 
-                         prn: str = "G01") -> pd.DataFrame:
+                         prn) -> pd.DataFrame:
     
     """Read orbits files fpr each prn and compute the ionospheric 
     Piercing point (given by latitude and longitude)"""
@@ -193,24 +193,20 @@ def piercing_points_data(year, doy,
     elif prn[0] == "G":
         const = "igr"
     
-    path = paths(year, doy, const = const)
-    
+   
     positions = json.load(open(path.fn_json))[station]["position"]
     
     ox, oy, oz = positions[0], positions[1], positions[2]
     
-    df = interpolate_orbits(path.fn_orbit, prn = prn)
+    df = interpolate_orbits(path.fn_orbit(const = const), prn = prn)
 
     sat_x_vals = df.x.values
     sat_y_vals = df.y.values
     sat_z_vals = df.z.values
 
     times = df.index
-    #print(positions)
     lon, lat, alt = convert_coords(ox, oy, oz, to_radians = True)
     
-    #print(lon, lat)
-
     result = { "lon": [], "lat": [], "el": [], "proj": []}
     
     index = []
