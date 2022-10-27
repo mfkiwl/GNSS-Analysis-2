@@ -21,7 +21,7 @@ def unzip_and_delete(files, year, path_to_save, delete = True):
         zip_path = os.path.join(path_to_save, filename)
         ext_year = str(year)[-2:] 
         
-        extensions = [ext_year + "o", ext_year + "d", "sp3"]
+        extensions = [ext_year + "o", ext_year + "d", ".sp3"]
         
         try:
             zip_file = zipfile.ZipFile(zip_path, 'r') 
@@ -61,15 +61,15 @@ def download(url, href,
 
 
 
-def orbit_url(year, doy, typing = "IGS", const = "G"):
+def orbit_url(year, doy, network = "IGS", const = "igr"):
     
-    """Build url and filenames"""
+    """Build urls and filenames from year, doy and GNSS system"""
     
     week, number = gpsweek_from_doy_and_year(year, doy)
     
-    url = infos[typing]
+    url = infos[network]
 
-    if typing == "IGS":
+    if network == "IGS":
 
         if const == "igr":
             url += f"orbits/{week}/"
@@ -80,22 +80,6 @@ def orbit_url(year, doy, typing = "IGS", const = "G"):
             filename = f"{const}{week}{number}.sp3.Z"
         
     return filename, url
-
-
-
-
-def check_files(year = 2014):
-    for doy in range(1, 366):
-        
-        try:
-            fname, url = orbit_url(year, 
-                                   doy, 
-                                   typing = "IGS", 
-                                   const = "igr")
-            print(fname)
-        except:
-            print(date_from_doy(year, doy))
-
 
 
 def rinex_url(year, doy, network = "IBGE"):
@@ -118,8 +102,6 @@ def request_and_download(url,
                          select_files = None):
     
     """Request website from url (RINEX or sp3) and download it """
-    
-    
     
     r = requests.get(url)
     s = BeautifulSoup(r.text, "html.parser")
@@ -161,13 +143,13 @@ def run_for_many_days(year = 2014,
             
             fname, url = orbit_url(year, doy, 
                                    typing = "IGS", 
-                                   const = "igr")
+                                   const = "igl")
             #url = urld + fname 
             
             #print(url)
             #path_to_create = create_path(year, doy, root = root)
             #path_to_save = folder(path_to_create)
-            path_to_save = paths(year, doy, root = root).orbit(const="igr")
+            path_to_save = paths(year, doy, root = root).orbit(const="igl")
             select_stations = ['alar', 'bair', 'brft', 'ceeu', 
                                'ceft', 'cesb', 'crat', 'pbcg', 
                                'pbjp', 'peaf', 'pepe', 'recf',
@@ -176,8 +158,8 @@ def run_for_many_days(year = 2014,
 
 
             files = request_and_download(url,
-                                         path_to_save, 
-                                         select_files = fname)
+                                 path_to_save, 
+                                 select_files = fname)
             
         except:
             print("it was not possible download...", 
@@ -189,11 +171,9 @@ def run_for_many_days(year = 2014,
         unzip_and_delete(files, year, path_to_save, delete = True)
         
 
-root = "C:\\"
+root = "D:\\"
 
-run_for_many_days(day_end = 3, root = root)
-
-
+run_for_many_days(root = root)
 
 
-       
+
