@@ -6,6 +6,8 @@ from gnss_utils import gpsweek_from_doy_and_year, date_from_doy
 import zipfile
 from build import paths, folder
 from tqdm import tqdm    
+from unlzw import unlzw
+
 
 infos = {"IBGE" : 'https://geoftp.ibge.gov.br/informacoes_sobre_posicionamento_geodesico/rbmc/dados', 
          "IGS": 'https://igs.bkg.bund.de/root_ftp/IGS/products/'}
@@ -15,36 +17,28 @@ regions = {"region1": ['alar', 'bair', 'brft', 'ceeu',
                        'pbjp', 'peaf', 'pepe', 'recf',
                        'rnmo', 'rnna', 'seaj']}
 
-def unzip_and_delete(files, year, path_to_save, delete = True):
+def unzip_rinex(files, year, path_to_save):
     
     """Deleting after unzipping files"""
     
-    for filename in files:
-       
-        zip_path = os.path.join(path_to_save, filename)
-        ext_year = str(year)[-2:] 
-        
-        extensions = [ext_year + "o", ext_year + "d", ".sp3"]
-        
-        try:
-            zip_file = zipfile.ZipFile(zip_path, 'r') 
-            
-            for file in zip_file.namelist():
-                
-                if any(file.endswith(ext) for ext in extensions):
-                    zip_file.extract(file, path_to_save)
-                    print(f"Extracting... {file}")
-                else:
-                    pass
+    zip_path = os.path.join(path_to_save, files)
+    zip_file = zipfile.ZipFile(zip_path, 'r') 
+    ext_year = str(year)[-2:] 
     
-            zip_file.close()
-            if delete:
-                try:
-                    os.remove(zip_path)
-                except Exception:
-                    print("Could not deleting files")
-        except:
-            continue
+    extensions = [ext_year + "o", ext_year + "d"]
+    
+   
+    zip_file = zipfile.ZipFile(zip_path, 'r') 
+    
+    for file in zip_file.namelist():
+        
+        if any(file.endswith(ext) for ext in extensions):
+            
+           
+            zip_file.extract(file, path_to_save)
+            
+    zip_file.close()
+    os.remove(zip_path)
         
 def download(url, 
              href, 
@@ -53,7 +47,7 @@ def download(url,
     remote_file = requests.get(url + href)
 
     out_file = os.path.join(path_to_save, href)
-    
+    print("download...", href)
     with open(out_file, 'wb') as f:
         for chunk in remote_file.iter_content(chunk_size = 1024): 
             if chunk: 
@@ -87,12 +81,7 @@ def rinex_url(year, doy, network = "IBGE"):
     doy_str = date.strftime("%j")
     return f"{infos[network]}/{year}/{doy_str}/"
 
-def create_path(year, doy, root = "C:\\"):
 
-    date = date_from_doy(year, doy)
-    doy_str = date.strftime("%j")
-    
-    return os.path.join(root, str(year), doy_str)
         
 def request(url, ext = ".zip"):
     """Request website from url (RINEX or sp3)"""
@@ -104,12 +93,6 @@ def request(url, ext = ".zip"):
     return [link['href'] for link in parser if ext in link["href"]]
 
 
-def filter_orbit(file_ext):
-    if not isinstance(file_ext, list):
-       file_ext = [file_ext] 
-    return 
-
-
 def filter_rinex(url, 
                  sel_stations = regions["region1"]
                  ):
@@ -119,6 +102,7 @@ def filter_rinex(url,
       rules = [f in href for f in sel_stations]
       if any(rules):
           out.append(href)
+          
   return out
 
 
@@ -133,16 +117,7 @@ def run_for_many_days(year = 2014,
     for doy in range(day_start, day_end, 1):
        
         try:
-            #url = rinex_url(year, doy, network = "IBGE")
-            
-            fname, url = orbit_url(year, doy, 
-                                   typing = "IGS", 
-                                   const = "igl")
-           
-            #
-            path_to_save = paths(year, doy, root = root).orbit(const="igl")
-
-
+            doy
             
         except:
             print("it was not possible download...", 
@@ -150,25 +125,59 @@ def run_for_many_days(year = 2014,
             continue
             
             
-            
-        #unzip_and_delete(files, year, path_to_save, delete = True)
-        
-year = 2015
-doy = 1
 
-def download_rinex(year, doy, root = "D:\\"):
+def download_rinex(year, 
+                   doy, 
+                   root = "D:\\", 
+                   sel_stations = regions["region1"]):
     url = rinex_url(year, doy)
     
     path_to_create = paths(year, doy, root = root).rinex     
     path_to_save = folder(path_to_create)
     
-    for href in request(url):
-        print("download...", href)
-        files = download(url, href, path_to_save)
-        unzip_and_delete(files, year, path_to_save, delete = True)
+    for href in filter_rinex(url, sel_stations = sel_stations):
         
+        files = download(url, href, path_to_save)
+        unzip_rinex(files, year, path_to_save)
+   
+def unzip_orbit(files): 
+    fh = open(files, 'rb')
+    compressed_data = fh.read()
+    uncompressed_data = unlzw(compressed_data)
+    
+    str_mybytes = str(uncompressed_data)
+    
+    again_mybytes = eval(str_mybytes)
+    decoded = again_mybytes.decode('utf8')
+    
+    file = open(files.replace(".Z", ""), 'w')
+    file.write(decoded)
+    file.close()
+    fh.close()
+    os.remove(files)
+   
+    
+def download_orbit(year, doy, root = "D:\\"):
+    
+    for const in ["igl", "igr"]:
+        fname, url = orbit_url(year, doy, 
+                           network = "IGS", const = const)
+    
+        path_to_save = paths(year, doy, 
+                             root = root).orbit(const = const)
+        
+        for href in request(url, ext = ".sp3"):
+            if fname in href:
+                files = download(url, href, path_to_save)
+           
+                unzip_orbit(files)
 
-#run_for_many_days(root = root)
+root = "C:\\"
 
+year = 2015
+doy = 2
 
-
+download_rinex(year, 
+                   doy, 
+                   root = "D:\\", 
+                   sel_stations = "")
