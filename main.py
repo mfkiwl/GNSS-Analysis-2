@@ -69,9 +69,11 @@ def run_for_all_files(path):
     return out_dict, all_prns
 
 
-def run_for_all_days(year, root, 
-                     start = 1, 
-                     end = 365, save_prn = True):
+def run_for_all_days(year:str, 
+                     root:str, 
+                     start:int = 1, 
+                     end:int = 365, 
+                     save_prn:bool = True):
     
     prn_in_year = []
     

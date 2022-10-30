@@ -127,10 +127,10 @@ def run_for_all_stations(path, save = True):
     return df
 
 
-def run_for_all_days(year:str, 
-                     root:str, 
-                     start:int = 1, 
-                     end:int = 365):
+def run_for_all_days(year: str, 
+                     root: str, 
+                     start: int = 1, 
+                     end: int = 365):
     
     
     for doy in range(start, end + 1):
@@ -148,11 +148,7 @@ start_time = time.time()
 
 year = 2014
 root = "D:\\"
-doy = 1
-#run_for_all_days(year, root)
-path = paths(year, doy, root = root)
-#run_for_all_stations(path, year, doy)
-print(path.fn_orbit(const = "igl"))
+run_for_all_days(year, root)
 
 print("--- %s hours ---" % ((time.time() - start_time) / 3600))
 
