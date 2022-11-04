@@ -65,7 +65,8 @@ def run_for_all_files(path):
             except:
                 continue
     all_prns = pd.concat(out_prns, axis = 1)
-    
+    all_prns.to_csv(path.prns, sep = ",")
+    save_attrs(path.fn_json, out_dict)
     return out_dict, all_prns
 
 
@@ -84,9 +85,6 @@ def run_for_all_days(year:str,
             
             json_dat, all_prns = run_for_all_files(path)
             
-            all_prns.to_csv(path.prns, sep = ",")
-            save_attrs(path.fn_json, json_dat)
-            
         except:
             continue
          
@@ -94,7 +92,11 @@ def run_for_all_days(year:str,
         
 
 start_time = time.time()
- 
+year = 2014
+doy = 1
+root = "D:\\"
+path = paths(year, doy, root = root)
+
 
 print("--- %s hours ---" % ((time.time() - start_time) / 3600))
 

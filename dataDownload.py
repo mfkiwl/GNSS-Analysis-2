@@ -6,7 +6,7 @@ from gnss_utils import gpsweek_from_doy_and_year, date_from_doy
 import zipfile
 from build import paths, folder
 from tqdm import tqdm    
-from unlzw import unlzw
+from unlzw3 import unlzw
 
 
 infos = {"IBGE" : 'https://geoftp.ibge.gov.br/informacoes_sobre_posicionamento_geodesico/rbmc/dados', 
@@ -174,10 +174,7 @@ def download_orbit(year, doy, root = "D:\\"):
 
 root = "C:\\"
 
-year = 2015
-doy = 2
+year = 2014
+doy = 1
 
-download_rinex(year, 
-                   doy, 
-                   root = "D:\\", 
-                   sel_stations = "")
+download_orbit(year, doy, root = "D:\\")

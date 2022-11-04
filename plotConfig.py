@@ -14,7 +14,10 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import shapely.geometry as sgeom
 from cartopy.geodesic import Geodesic
 
-plt.rcParams.update({'font.size': 12, 
+
+fontsize = 20
+
+plt.rcParams.update({'font.size': fontsize, 
                      'axes.linewidth' : 0.5,
                      'grid.linewidth' : 0.5,
                      'lines.linewidth' : 1.,
@@ -145,7 +148,8 @@ class mapping(object):
         #ax.plot(xnew, ynew,  "--", color = "k", lw = 3)
         ax.plot(x, y,  "--", color = "k", lw = 3)
         
-def text_painels(axs, x = 0.8, y = 0.8, fontsize = 14):
+def text_painels(axs, x = 0.8, y = 0.8, 
+                 fontsize = fontsize):
     """Plot text for enumerate painels by letter"""
     chars = list(map(chr, range(97, 123)))
     
