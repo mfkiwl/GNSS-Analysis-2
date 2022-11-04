@@ -20,11 +20,15 @@ def load_slant_tec(path,
     """Read processed STEC data"""
     
     tec_path = path.fn_process(station)
-    
-    tec = pd.read_csv(tec_path, 
+    try:
+        tec = pd.read_csv(tec_path, 
+                      delimiter = ",", 
+                      index_col = "time")
+    except:
+        
+        tec = pd.read_csv(tec_path, 
                       delimiter = ";", 
                       index_col = "time")
-
     tec.index = pd.to_datetime(tec.index)
     
     return tec.loc[:, [prn]].dropna()
@@ -122,7 +126,7 @@ def run_for_all_stations(path, save = True):
     df = pd.concat(all_stations)
     
     if save:
-        df.to_csv(path.fn_roti, sep = ";", index = True)
+        df.to_csv(path.fn_roti, sep = ",", index = True)
 
     return df
 
@@ -148,8 +152,9 @@ start_time = time.time()
 
 year = 2014
 root = "D:\\"
-run_for_all_days(year, root)
-
+doy = 1
+path = paths(year, doy, root = root)
+run_for_all_stations(path, save = True)
 print("--- %s hours ---" % ((time.time() - start_time) / 3600))
 
 
