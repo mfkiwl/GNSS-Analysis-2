@@ -132,3 +132,16 @@ def folder(path_to_create: str):
     return path_to_create
 
 
+def database_folders(year = 2014):
+    folders = ["orbit", "json", "prns", 
+               "process", "rinex", "roti"]
+    
+    base = paths(year = 2014).current_path
+    
+    for dir_ in folders:
+        try:
+            folder_created = folder(os.path.join(base, dir_))
+            folder(os.path.join(folder_created, str(year)))
+        except OSError:
+              print("already exists")
+      
