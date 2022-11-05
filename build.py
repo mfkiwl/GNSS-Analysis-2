@@ -8,7 +8,9 @@ from pathlib import Path
 
 class paths(object):
     
-    def __init__(self, year: int, doy: int, 
+    def __init__(self, 
+                 year: int = 2014, 
+                 doy: int = 1, 
                  root = str(Path.cwd())):
         
         """Construct file paths from input date (year and doy)"""
@@ -26,7 +28,10 @@ class paths(object):
     def orbit(self, const = "igr"):
         return os.path.join(self.current_path, "orbit", 
                             self.year, const)
-    
+    @property
+    def geo(self):
+        return os.path.join(self.current_path, "geo", 
+                            f"{self.year}.txt")
     @property
     def rinex(self):
         return os.path.join(self.current_path, "rinex", 
