@@ -7,6 +7,7 @@ import zipfile
 from build import paths, folder
 from tqdm import tqdm    
 from unlzw3 import unlzw
+import time
 
 
 infos = {"IBGE" : 'https://geoftp.ibge.gov.br/informacoes_sobre_posicionamento_geodesico/rbmc/dados', 
@@ -175,6 +176,13 @@ def download_orbit(year, doy, root = "D:\\"):
 root = "C:\\"
 
 year = 2014
-doy = 1
+doy = 2
+start_time = time.time()
 
-download_orbit(year, doy, root = "D:\\")
+download_rinex(year, 
+                doy, 
+                root = "D:\\", 
+                sel_stations = ".zip")
+
+
+print("--- %s minutes ---" % ((time.time() - start_time) / 60))

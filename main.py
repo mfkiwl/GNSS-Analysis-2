@@ -97,7 +97,7 @@ doy = 1
 root = "D:\\"
 path = paths(year, doy, root = root)
 
-
+run_for_all_files(path)
 print("--- %s hours ---" % ((time.time() - start_time) / 3600))
 
 

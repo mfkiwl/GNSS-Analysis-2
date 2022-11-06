@@ -170,9 +170,8 @@ def run_for_all_days(year: str,
          
 start_time = time.time()
 
-    
-get_prns()
 #run_for_all_stations(path, save = True)
+
 print("--- %s hours ---" % ((time.time() - start_time) / 3600))
 
 
