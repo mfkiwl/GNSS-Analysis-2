@@ -5,7 +5,8 @@ import shapely.geometry as sgeom
 from cartopy.geodesic import Geodesic
 from sub_ionospheric_point import convert_coords
 import datetime 
-from sys import exit
+from build import paths
+import json
 
 def get_coords_from_sites(station, dat):
 
@@ -50,7 +51,9 @@ def plotStations(ax,
     
    
     doy = date.strftime("%j")
-    path_json = f'Database/json/{date.year}/{doy}.json'
+    year = date.year
+    
+    path_json = paths(year, int(doy)).fn_json
 
     dat = json.load(open(path_json))
     
@@ -73,7 +76,8 @@ def plotStations(ax,
             ax.text(lon + 0.15, lat, 
                     station.upper(), 
                     transform = ccrs.PlateCarree(), 
-                    color = "k")
+                    color = "k", 
+                    fontsize = 30)
 
 def circle_range(ax, longitude, latitude, 
                  radius = 500, color = "gray"):
@@ -91,7 +95,8 @@ def circle_range(ax, longitude, latitude,
                       alpha = 0.2, label = 'radius')
 
 def circle_with_legend(ax, angle, height, name, color,
-                       marker = "s", infos = None):
+                       marker = "s", infos = None, 
+                       markersize = 30):
      
      radius = height * np.sin(np.radians(angle)) 
           
@@ -108,7 +113,7 @@ def circle_with_legend(ax, angle, height, name, color,
                   color = color)
          
      ax.plot(lon, lat, marker = marker, label =  name, 
-             color = color, markersize = 10,
+             color = color, markersize = markersize,
              transform = ccrs.PlateCarree())
      
      ax.legend(loc = "lower right")
@@ -118,7 +123,8 @@ def plot_range_stations(ax,
                         angles = [180, 33], 
                         colors = ["red", "blue"], 
                         names = ["Cariri", "Fortaleza"], 
-                        markers = ["s", "^"]):
+                        markers = ["s", "^"], 
+                        markersize = 30):
     for num in range(2):
         
         angle = angles[num]
@@ -126,7 +132,9 @@ def plot_range_stations(ax,
         color = colors[num]
         marker = markers[num]
        
-        circle_with_legend(ax, angle, 250, name, color, marker)
+        circle_with_legend(ax, angle, 250, 
+                           name, color, marker, 
+                           markersize = markersize)
         
         
 def save(infile = "img/methods/InstrumentionLocations.png"):     
@@ -153,4 +161,3 @@ def main():
                "Receptores GNSS"], ncol = 3)
     plt.show()
     
-main()
