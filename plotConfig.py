@@ -5,13 +5,15 @@ import numpy as np
 import pandas as pd
 #from scipy import interpolate
 #import terminator as tr
+import locale
+from build import paths
 
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
-
+locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
 fontsize = 35
 
-lw = 2
+lw = 1
 major = 8
 minor = 4
 plt.rcParams.update({'font.size': fontsize, 
@@ -23,14 +25,14 @@ plt.rcParams.update({'font.size': fontsize,
                      'savefig.pad_inches' : 0.05,
                      'mathtext.fontset': 'dejavuserif', 
                      'font.family': 'serif', 
-                     'ytick.direction': 'out',
+                     'ytick.direction': 'in',
                      'ytick.minor.visible' : True,
                      'ytick.right' : True,
                      'ytick.major.size' : lw + major,
                      'ytick.major.width' : lw,
                      'ytick.minor.size' : lw + minor,
                      'ytick.minor.width' : lw,
-                     'xtick.direction' : 'out',
+                     'xtick.direction' : 'in',
                      'xtick.major.size' : lw + major,
                      'xtick.major.width': lw,
                      'xtick.minor.size' : lw + minor,
@@ -109,11 +111,10 @@ class mapping(object):
                       crs=ccrs.PlateCarree())
     
     @staticmethod
-    def equator(ax, infile = "G://My Drive//Python//data-analysis//GNSS//database//geo//Inclination2021.txt"):
+    def equator(ax, year = 2014):
         """Plotting geomagnetic equator"""
-        
-        eq = pd.read_csv(infile, 
-                         delim_whitespace = True)
+        infile = paths(year = year).geo
+        eq = pd.read_csv(infile)
         
         eq = pd.pivot_table(eq, columns = "lon", index = "lat", values = "B")
         
