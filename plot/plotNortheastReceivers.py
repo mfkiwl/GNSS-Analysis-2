@@ -1,40 +1,63 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sun Sep  4 20:23:57 2022
+import pandas as pd
+from plotConfig import mapping
+from plot.plotMappingRange import *
+from build import paths, tex_path
 
-@author: Luiz
-"""
+p = mapping(width = 20, heigth = 20, ncols = 1 )
 
-from mapping import *
 
-start_lat = -40
-end_lat = 10
-end_lon = -30
-start_lon = -80
-fig, ax = plotMapping(start_lat = start_lat, 
-                end_lat = end_lat, 
-                start_lon = start_lon, 
-                end_lon = end_lon,
-                step_lat = 5, 
-                step_lon = 5)
+fig, ax = p.subplots_with_map()
 
-num = 30
-elevation = 0
+p.mapping_attrs(ax, 
+                step_lat = 2, step_lon = 2,
+                lat_min = -12, lat_max = -2, 
+                lon_max = -32, lon_min = -42)
 
-sel_time = times[num]
 
-df = adf.loc[(adf.index > sel_time) & 
-             (adf.index < sel_time + delta) & 
-             (adf.el > elevation), :]
 
-ts = df.copy()
+plotStations(ax, 
+            date = datetime.date(2014, 1, 1), 
+            color = "green", 
+            markersize = 15, 
+            marker = "o",   
+            lat_min = -12, 
+            lat_max = -2, 
+            lon_max = -32, 
+            lon_min = -42)
 
-lons, lats, arr = getting_values(ts, 
-               start_lat, end_lat, 
-               start_lon, end_lon, 
-               step = 1)
 
-ax.contourf(lons, lats, arr, 50, cmap = "jet")
+plot_range_stations(ax)
 
-ax.set(title = str(sel_time))
-plt.show()
+
+size = 300
+
+l1 = plt.scatter([],[], s = size, 
+                 color = 'green', 
+                 marker = "o",
+                 edgecolors='none')
+
+
+l2 = plt.scatter([],[], s = size, 
+                 color = 'red', 
+                 marker = 's', 
+                 edgecolors='none')
+
+
+l3 = plt.scatter([],[], s = size, 
+                 color = 'blue', 
+                 marker = '^', 
+                 edgecolors='none')
+
+labels = ["Receptores GNSS - RBMC", 
+          "Imageador (Cariri)", 
+          "Ionossonda (Fortaleza)"]
+
+leg = plt.legend([l1, l2, l3], labels, 
+                 fontsize = 30,
+                 loc = "upper right", 
+                 )
+
+filename = "northeast_region.png"
+fig.savefig(os.path.join(tex_path("results"), filename),
+            dpi = 500
+            )
