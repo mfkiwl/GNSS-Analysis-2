@@ -131,8 +131,14 @@ def folder(path_to_create: str):
     
     return path_to_create
 
+def tex_path(folder):
+    
+    
+    latex = "G:\\My Drive\\Doutorado\\Modelos_Latex_INPE\\docs\\Proposal\\Figures\\"
+    return os.path.join(latex, folder)
 
 def database_folders(year = 2014):
+    """Created all folders needed for save data"""
     folders = ["orbit", "json", "prns", 
                "process", "rinex", "roti"]
     
