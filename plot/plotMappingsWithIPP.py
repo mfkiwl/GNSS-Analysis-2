@@ -36,45 +36,48 @@ def interval(df,
 
 infile = "database/roti/2014/001.txt"
 
-df = load_roti(infile)
-hour = 21
-minute = 0
-
-
-df = interval(df, 
-             hour = hour, 
-             minute = minute)
-
-p = mapping(width = 20, 
-            heigth = 20,
-            ncols = 1 )
-
-
-fig, ax = p.subplots_with_map()
-
-p.mapping_attrs(ax, 
-                step_lat = 5, step_lon = 5,
-                lat_min = -35, lat_max = 10, 
-                lon_max = -30, lon_min = -80)
-
-img = ax.scatter(df.lon, 
-           df.lat, 
-           c = df.roti, 
-           s = 200, 
-           cmap = "jet", 
-           marker = "s", 
-           vmin = 0, 
-           vmax = 5)
-
-ticks = np.arange(0, 6, 1)
-colorbar_setting(img, ax, ticks)
-
-square_area(ax, lw = 6)
-p.equator(ax)
-
-date = df.index[0].strftime("%d/%m/%Y") 
-time = datetime.time(hour, minute).strftime("%H:%M")
-
-ax.set(title = f"{date} {time} (UT)")
-plt.show()
+def plotMappingIPP(infile):
+    df = load_roti(infile)
+    hour = 21
+    minute = 0
+    
+    
+    df = interval(df, 
+                 hour = hour, 
+                 minute = minute)
+    
+    p = mapping(width = 20, 
+                heigth = 20,
+                ncols = 1 )
+    
+    
+    fig, ax = p.subplots_with_map()
+    
+    p.mapping_attrs(ax, 
+                    step_lat = 5, step_lon = 5,
+                    lat_min = -35, lat_max = 10, 
+                    lon_max = -30, lon_min = -80)
+    
+    img = ax.scatter(df.lon, 
+               df.lat, 
+               c = df.roti, 
+               s = 200, 
+               cmap = "jet", 
+               marker = "s", 
+               vmin = 0, 
+               vmax = 5)
+    
+    ticks = np.arange(0, 6, 1)
+    colorbar_setting(img, ax, ticks)
+    
+    square_area(ax, lw = 6)
+    p.equator(ax)
+    
+    date = df.index[0].strftime("%d/%m/%Y") 
+    time = datetime.time(hour, minute).strftime("%H:%M")
+    
+    ax.set(title = f"{date} {time} (UT)")
+    plt.show()
+    
+    return fig
 
