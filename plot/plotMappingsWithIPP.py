@@ -39,6 +39,8 @@ infile = "database/roti/2014/001.txt"
 df = load_roti(infile)
 hour = 21
 minute = 0
+
+
 df = interval(df, 
              hour = hour, 
              minute = minute)
@@ -71,8 +73,8 @@ square_area(ax, lw = 6)
 p.equator(ax)
 
 date = df.index[0].strftime("%d/%m/%Y") 
+time = datetime.time(hour, minute).strftime("%H:%M")
 
-
-ax.set(title = f"{date}")
+ax.set(title = f"{date} {time} (UT)")
 plt.show()
 
