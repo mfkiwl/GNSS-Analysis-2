@@ -1,50 +1,46 @@
 import matplotlib.pyplot as plt
-import matplotlib.dates as dates
 import cartopy.feature as cf
 import cartopy.crs as ccrs
 import numpy as np
-import json
 import pandas as pd
-from scipy import interpolate
-import terminator as tr
-from sub_ionospheric_point import convert_coords
-import json
+#from scipy import interpolate
+#import terminator as tr
+
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
-import shapely.geometry as sgeom
-from cartopy.geodesic import Geodesic
 
+fontsize = 35
 
-fontsize = 20
-
+lw = 2
+major = 8
+minor = 4
 plt.rcParams.update({'font.size': fontsize, 
-                     'axes.linewidth' : 0.5,
-                     'grid.linewidth' : 0.5,
-                     'lines.linewidth' : 1.,
+                     'axes.linewidth' : lw,
+                     'grid.linewidth' : lw,
+                     'lines.linewidth' : lw,
                      'legend.frameon' : False,
                      'savefig.bbox' : 'tight',
                      'savefig.pad_inches' : 0.05,
                      'mathtext.fontset': 'dejavuserif', 
                      'font.family': 'serif', 
-                     'ytick.direction': 'in',
+                     'ytick.direction': 'out',
                      'ytick.minor.visible' : True,
                      'ytick.right' : True,
-                     'ytick.major.size' : 3,
-                     'ytick.major.width' : 0.5,
-                     'ytick.minor.size' : 1.5,
-                     'ytick.minor.width' : 0.5,
-                     'xtick.direction' : 'in',
-                     'xtick.major.size' : 3,
-                     'xtick.major.width': 0.5,
-                     'xtick.minor.size' : 1.5,
-                     'xtick.minor.width' : 0.5,
+                     'ytick.major.size' : lw + major,
+                     'ytick.major.width' : lw,
+                     'ytick.minor.size' : lw + minor,
+                     'ytick.minor.width' : lw,
+                     'xtick.direction' : 'out',
+                     'xtick.major.size' : lw + major,
+                     'xtick.major.width': lw,
+                     'xtick.minor.size' : lw + minor,
+                     'xtick.minor.width' :lw,
                      'xtick.minor.visible' : True,
                      'xtick.top' : True,
-                     'axes.prop_cycle' : plt.cycler('color', 
-                                                    ['#0C5DA5', '#00B945', '#FF9500', 
-                                                     '#FF2C00', '#845B97', '#474747', 
-                                                     '#9e9e9e'])
-                         })   
+                     'axes.prop_cycle' : 
+                    plt.cycler('color', ['#0C5DA5', '#00B945', '#FF9500', 
+                                                              '#FF2C00', '#845B97', '#474747', '#9e9e9e'])
+                         }) 
     
 class mapping(object):
     
@@ -100,7 +96,8 @@ class mapping(object):
         ax.add_feature(cf.COASTLINE, edgecolor='black', lw = 2) 
         ax.add_feature(cf.BORDERS, linestyle='-', edgecolor='black')
 
-        ax.set(ylabel = 'Latitude (°)', xlabel = 'Longitude (°)')
+        ax.set_ylabel('Latitude (°)', fontsize = fontsize + 12 ) 
+        ax.set_xlabel('Longitude (°)', fontsize = fontsize + 12)
         
         ax.set_extent([lon_min, lon_max, lat_min, lat_max], 
                       crs=ccrs.PlateCarree())
@@ -126,27 +123,8 @@ class mapping(object):
         
         cs.cmap.set_over('red')
         
-        
-    @staticmethod
-    def terminator(ax, date, angle = 18):
-        """Plotting terminator line from datetime"""
-        a_lon_term, a_lat_term = tr.terminator(date, 18)
     
-        x = np.array(a_lon_term) 
-        y = np.array(a_lat_term)
-        f = interpolate.interp1d(x, y, 
-                                 fill_value = "extrapolate")
-        
-        delta = 1
-        lonmin = -180
-        lonmax = 180
-        
-        xnew = np.arange(lonmin, 
-                         lonmax + 0.5 * delta, delta,
-                         dtype=np.float32)
-        ynew = f(xnew)
-        #ax.plot(xnew, ynew,  "--", color = "k", lw = 3)
-        ax.plot(x, y,  "--", color = "k", lw = 3)
+   
         
 def text_painels(axs, x = 0.8, y = 0.8, 
                  fontsize = fontsize):
@@ -184,25 +162,33 @@ def save(infile = "img/methods/InstrumentionLocations.png"):
     """Save figure"""
     plt.savefig(infile, dpi = 500, bbox_inches = "tight")
     
-def main():   
-    p = mapping()
-    
-    #fig, ax = p.subplots_with_map()
-    
-    fig, ax = p.subplots_with_map(width = 15, heigth = 15, ncols = 1)
-    
-    p.setting_states_map(ax, step_lat = 1, step_lon = 1,
-                         lat_min = -12, lat_max = -2, 
-                         lon_max = -32, lon_min = -42)
-    
-    infos = {"Cariri": [-36.55, -7.38], 
-             "Fortaleza": [-38.45, -3.9]}
-    
 
 
 
 
+"""
 
+ @staticmethod
+ def terminator(ax, date, angle = 18):
+     Plotting terminator line from datetime
+     a_lon_term, a_lat_term = tr.terminator(date, 18)
+ 
+     x = np.array(a_lon_term) 
+     y = np.array(a_lat_term)
+     f = interpolate.interp1d(x, y, 
+                              fill_value = "extrapolate")
+     
+     delta = 1
+     lonmin = -180
+     lonmax = 180
+     
+     xnew = np.arange(lonmin, 
+                      lonmax + 0.5 * delta, delta,
+                      dtype=np.float32)
+     ynew = f(xnew)
+     #ax.plot(xnew, ynew,  "--", color = "k", lw = 3)
+     ax.plot(x, y,  "--", color = "k", lw = 3)
 
+"""
 
             
