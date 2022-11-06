@@ -1,117 +1,93 @@
-from ROTI import *
+from rot_roti import rot, roti
 import matplotlib.dates as dates 
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+from plotConfig import *
 import datetime 
+from build import tex_path
 
-infile = "Database/all_process/2014/001_test/"
-
-def plot_tec_rate(df, prn, station, 
-                  save = False, 
-                  path_to_save = None):
+def plotSequetialParameters(df, prn, ncol, ax):
     
     """Plotting subplots for each TEC rate and slant TEC"""
     
-    if save:
-        plt.ioff()
+    df1 = df.loc[(df.el > 30) & (df.prn == prn), :]    
+    if prn == "G18":
+        df1 = df1.loc[df1.index < datetime.datetime(2014, 1, 1, 4, 0)]
+        title = f"PRN = {prn.upper()} (com bolha)"
+    else:
+        title = f"PRN = {prn.upper()} (sem bolha)"
+        
     
-    df1 = df.loc[(df.el > 30) & (df.prn == prn), :]
-    date = df1.index[0].strftime("%d/%m/%Y")
+    df1 = df1.dropna()
     time = df1.index
     stec = df1.stec.values
-    
-    
-    title = f"{station.upper()} (PRN = {prn.upper()}) - {date}"
-    
-    fig, ax = plt.subplots(figsize = (6, 8), 
-                           nrows = 4, 
-                           sharex = True)
-    
-    plt.subplots_adjust(hspace = 0.0)
-    
-    
 
-    args = dict(color = "k", lw = 1)
-    ax[0].plot(df1.el, **args)
-    ax[0].set(ylabel = "Elevação (°)", 
-              title = title, 
-              ylim = [20, 100], 
-              yticks = np.arange(10, 100, 20))
+    
+    args = dict(color = "k", lw = 2)
+    ax[0, ncol].plot(df1.el, **args)
+    ax[0, ncol].set(ylabel = "Elevação (°)", 
+                    title = title, 
+                    ylim = [30, 90], 
+                    yticks = np.arange(20, 100, 20))
 
-    ax[1].plot(time, stec, **args)
-    ax[1].set(ylabel = "STEC (TECU)", 
-              ylim = [-40, 10], 
-              yticks = np.arange(-30, 10, 10))
+    ax[1, ncol].plot(time, stec, **args)
+    ax[1, ncol].set(ylabel = "STEC (TECU)", 
+              ylim = [-20, 40])
 
-    #indexes = find_gaps(df1).gaps
-    dtec = df1["stec"] - df1["stec"].rolling("2.5min").mean()
-    rot, rot_time, roti, roti_time = rot_and_roti(dtec, time)
+    rot_time, vrot = rot(stec, time)
+    roti_time, vroti = roti(stec, time)
    
 
-    ax[2].plot(rot_time, rot, **args)
-    ax[2].set(ylabel = "ROT (TECU/min)", 
+    ax[2, ncol].plot(rot_time, vrot, **args)
+    ax[2, ncol].set(ylabel = "ROT (TECU/min)", 
               ylim = [-12, 12], 
               yticks = np.arange(-10, 12, 5))
     
 
-    ax[3].plot(roti_time, roti, **args)
+    ax[3, ncol].plot(roti_time, vroti, **args)
 
 
-    delta_lim = datetime.timedelta(hours = 1)
-    ax[3].set(ylabel = "ROTI (TECU/min)", 
+    ax[3, ncol].set(ylabel = "ROTI (TECU/min)", 
               ylim = [0, 6], 
               yticks = np.arange(0, 6, 1),
-              xlim = [df1.index[0] - delta_lim, 
-                      df1.index[-1] + delta_lim], 
               xlabel = "Hora universal (UT)")
 
-    ax[3].xaxis.set_major_formatter(dates.DateFormatter('%H'))
-    ax[3].xaxis.set_major_locator(dates.HourLocator(interval = 1))
+    ax[3, ncol].xaxis.set_major_formatter(dates.DateFormatter('%H'))
+    ax[3, ncol].xaxis.set_major_locator(dates.HourLocator(interval = 1))
     
-    labels = ["(a)", "(b)", "(c)", "(d)"]
-    for num, ax in enumerate(ax.flat):
-        
-        ax.text(0.9, 0.8, labels[num], transform = ax.transAxes)
-    
-    
-    plt.rcParams.update({'font.size': 12})  
-    if save:
-        print("Saving...", prn)
-        if path_to_save == None:
-            path_to_save = "img/roti/{station}/"
-        
-            
-        fig.savefig(f"{path_to_save}Parameters_{station}_{prn}.png", 
-                   dpi = 300, 
-                   facecolor="white", 
-                   transparent=False)
-        
-        plt.clf()   
-        plt.close()
-    else:
-        plt.show()
+
         
 def main():
-    filename = "pbjp.txt"
-    prn = "G14"
-    station = filename.replace(".txt", "")
-    
-    df = pd.read_csv(infile + filename, 
-             delim_whitespace = True, 
-             index_col = "time")
+    infile = "database/examples/"
+    filename = "without_with_epbs.txt"
+
+    df = pd.read_csv(infile + filename,
+                     index_col = 0)
     
     df.index = pd.to_datetime(df.index)
+    date = df.index[0].strftime("%d de %B de %Y")
+    
+    fig, ax = plt.subplots(figsize = (30, 30), 
+                          nrows = 4,
+                          ncols = 2, 
+                          sharex='col')
+    plt.subplots_adjust(hspace = 0.0)
+    
+    station = "pbjp"
+    
+    for ncol, prn in enumerate(["G02", "G18"]):
+        plotSequetialParameters(df, prn, ncol, ax)
+        
+    fig.suptitle(f"Estação: {station.upper()} - {date}", 
+                 y = 0.95)
     
     
-    path_to_save = "G:\\My Drive\\Doutorado\\Modelos_Latex_INPE\\docs\\Proposal\\Figures\\methods\\"
+    path_to_save = os.path.join(tex_path("methods"), 
+                                "sequential_parameters.png")
+    #print(path_to_save)
+
+    fig.savefig(path_to_save ,
+                dpi = 300
+                )
     
-    
-    plot_tec_rate(df, 
-                  prn, 
-                  station, 
-                  save = True, 
-                  path_to_save = path_to_save)
-    
-    
-main()
