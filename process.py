@@ -131,6 +131,26 @@ def run_for_all_stations(path, save = True):
     return df
 
 
+def get_prns(year = 2014,  
+             doy = 1, 
+             station =  "pbjp", 
+             root = "D:\\", 
+             prns = ["G02", "G18"]):
+
+    path = paths(year, doy)
+    out = []
+    for prn in prns:
+        out.append(join_data(path,
+                      prn,
+                      station))
+    
+    df = pd.concat(out)
+    
+    df.to_csv("database/examples/without_with_epbs.txt", 
+              sep = ",", 
+              index = True)
+
+
 def run_for_all_days(year: str, 
                      root: str, 
                      start: int = 1, 
@@ -150,11 +170,9 @@ def run_for_all_days(year: str,
          
 start_time = time.time()
 
-year = 2014
-root = "D:\\"
-doy = 1
-path = paths(year, doy, root = root)
-run_for_all_stations(path, save = True)
+    
+get_prns()
+#run_for_all_stations(path, save = True)
 print("--- %s hours ---" % ((time.time() - start_time) / 3600))
 
 
