@@ -11,15 +11,14 @@ def plotSequetialParameters(df, prn, ncol, ax):
     
     """Plotting subplots for each TEC rate and slant TEC"""
     
-    df1 = df.loc[(df.el > 30) & (df.prn == prn), :]    
-    if prn == "G18":
-        df1 = df1.loc[df1.index < datetime.datetime(2014, 1, 1, 4, 0)]
-        title = f"PRN = {prn.upper()} (com bolha)"
+    df1 = df.loc[(df.el > 30) & (df.prn == prn), :].dropna() 
+    if prn == "R07":
+        df1 = df1.loc[df1.index < 
+                      datetime.datetime(2014, 1, 1, 6, 0)]
+        title = f"PRN = {prn.upper()} (com EPB)"
     else:
-        title = f"PRN = {prn.upper()} (sem bolha)"
+        title = f"PRN = {prn.upper()} (sem EPB)"
         
-    
-    df1 = df1.dropna()
     time = df1.index
     stec = df1.stec.values
 
@@ -28,12 +27,13 @@ def plotSequetialParameters(df, prn, ncol, ax):
     ax[0, ncol].plot(df1.el, **args)
     ax[0, ncol].set(ylabel = "Elevação (°)", 
                     title = title, 
-                    ylim = [30, 90], 
-                    yticks = np.arange(20, 100, 20))
+                    ylim = [30, 60])
+    
 
     ax[1, ncol].plot(time, stec, **args)
     ax[1, ncol].set(ylabel = "STEC (TECU)", 
-              ylim = [-20, 40])
+                    ylim = [40, 120], 
+                    yticks = np.arange(40, 110, 20))
 
     rot_time, vrot = rot(stec, time)
     roti_time, vroti = roti(stec, time)
@@ -56,11 +56,20 @@ def plotSequetialParameters(df, prn, ncol, ax):
     ax[3, ncol].xaxis.set_major_formatter(dates.DateFormatter('%H'))
     ax[3, ncol].xaxis.set_major_locator(dates.HourLocator(interval = 1))
     
-
+def save(fig, filename = "sequential_parameters.png"):
+    
+    path_to_save = os.path.join(tex_path("methods"), 
+                                filename)
+    
+    fig.savefig(path_to_save,
+                dpi = 300
+                )
         
 def main():
     infile = "database/examples/"
-    filename = "without_with_epbs.txt"
+
+
+    filename = "ceft.txt"
 
     df = pd.read_csv(infile + filename,
                      index_col = 0)
@@ -68,26 +77,21 @@ def main():
     df.index = pd.to_datetime(df.index)
     date = df.index[0].strftime("%d de %B de %Y")
     
-    fig, ax = plt.subplots(figsize = (30, 30), 
+    fig, ax = plt.subplots(figsize = (30, 32), 
                           nrows = 4,
                           ncols = 2, 
-                          sharex='col')
+                          sharex = 'col')
     plt.subplots_adjust(hspace = 0.0)
     
-    station = "pbjp"
+    station = filename.replace(".txt", "")
     
-    for ncol, prn in enumerate(["G02", "G18"]):
+    for ncol, prn in enumerate(["R07", "R24"]):
         plotSequetialParameters(df, prn, ncol, ax)
         
     fig.suptitle(f"Estação: {station.upper()} - {date}", 
                  y = 0.95)
     
     
-    path_to_save = os.path.join(tex_path("methods"), 
-                                "sequential_parameters.png")
-    #print(path_to_save)
-
-    fig.savefig(path_to_save ,
-                dpi = 300
-                )
+    save(fig, filename = "sequential_parameters.png")
     
+main()

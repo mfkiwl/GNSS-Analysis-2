@@ -2,7 +2,7 @@ from sub_ionospheric_point import piercing_points_data
 import pandas as pd
 import time
 import os
-from build import paths, folder
+from build import paths, folder, prns
 from rot_roti import roti
 import sys       
 import os
@@ -131,22 +131,23 @@ def run_for_all_stations(path, save = True):
     return df
 
 
-def get_prns(year = 2014,  
+def compute_for_prns(year = 2014,  
              doy = 1, 
-             station =  "pbjp", 
-             root = "D:\\", 
-             prns = ["G02", "G18"]):
+             station =  "ceft"):
 
     path = paths(year, doy)
     out = []
-    for prn in prns:
-        out.append(join_data(path,
+    for prn in prns().gps_and_glonass:
+        try:
+            out.append(join_data(path,
                       prn,
                       station))
+        except:
+            continue
     
     df = pd.concat(out)
     
-    df.to_csv("database/examples/without_with_epbs.txt", 
+    df.to_csv("database/examples/ceft.txt", 
               sep = ",", 
               index = True)
 
@@ -169,9 +170,9 @@ def run_for_all_days(year: str,
             continue
          
 start_time = time.time()
-
-#run_for_all_stations(path, save = True)
-
+compute_for_prns(year = 2014,  
+             doy = 1, 
+             station =  "ceft")
 print("--- %s hours ---" % ((time.time() - start_time) / 3600))
 
 
