@@ -3,10 +3,9 @@ import cartopy.feature as cf
 import cartopy.crs as ccrs
 import numpy as np
 import pandas as pd
-#from scipy import interpolate
-#import terminator as tr
+import terminator as tr
 import locale
-from build import paths
+#from build import paths
 
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
@@ -114,19 +113,21 @@ class mapping(object):
     def equator(ax, year = 2014):
         """Plotting geomagnetic equator"""
         infile = paths(year = year).geo
-        eq = pd.read_csv(infile)
-        
-        eq = pd.pivot_table(eq, columns = "lon", index = "lat", values = "B")
+        eq = pd.read_csv(infile, index_col = "lat")
+        eq.columns = pd.to_numeric(eq.columns)
         
         cs = ax.contour(eq.columns, eq.index, eq.values, 1, 
-                   linewidths = 3, colors = "red", 
-                    transform = ccrs.PlateCarree())
+                        linewidths = 3, colors = "red", 
+                        transform = ccrs.PlateCarree())
         
         cs.cmap.set_over('red')
-        
     
-   
-        
+    @staticmethod
+    def terminator(ax, date, angle = 18):
+        """Plotting terminator line from datetime"""
+        x, y = tr.terminator(date, 18)
+        ax.plot(x, y,  "--", color = "k", lw = 3)
+
 def text_painels(axs, x = 0.8, y = 0.8, 
                  fontsize = fontsize):
     """Plot text for enumerate painels by letter"""
@@ -165,31 +166,4 @@ def save(infile = "img/methods/InstrumentionLocations.png"):
     
 
 
-
-
-"""
-
- @staticmethod
- def terminator(ax, date, angle = 18):
-     Plotting terminator line from datetime
-     a_lon_term, a_lat_term = tr.terminator(date, 18)
- 
-     x = np.array(a_lon_term) 
-     y = np.array(a_lat_term)
-     f = interpolate.interp1d(x, y, 
-                              fill_value = "extrapolate")
-     
-     delta = 1
-     lonmin = -180
-     lonmax = 180
-     
-     xnew = np.arange(lonmin, 
-                      lonmax + 0.5 * delta, delta,
-                      dtype=np.float32)
-     ynew = f(xnew)
-     #ax.plot(xnew, ynew,  "--", color = "k", lw = 3)
-     ax.plot(x, y,  "--", color = "k", lw = 3)
-
-"""
-
-            
+    
