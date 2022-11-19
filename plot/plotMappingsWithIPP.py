@@ -1,11 +1,10 @@
-from plotConfig import *
 import cartopy.feature as cf
 import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
 import numpy as np
 import datetime
-
 from plot.plotMappingRange import square_area
+from plotConfig import *
 
 
 
@@ -34,17 +33,10 @@ def interval(df,
                   (df.index <= end)]
 
 
-infile = "database/roti/2014/001.txt"
 
-def plotMappingIPP(infile):
-    df = load_roti(infile)
-    hour = 21
-    minute = 0
-    
-    
-    df = interval(df, 
-                 hour = hour, 
-                 minute = minute)
+
+def plotMappingIPP(df):
+   
     
     p = mapping(width = 20, 
                 heigth = 20,
@@ -81,3 +73,25 @@ def plotMappingIPP(infile):
     
     return fig
 
+infile = "database/roti/2014/002.txt"
+
+df = load_roti(infile)
+
+print(df)
+
+#%%
+
+hour = 7
+minute = 0
+
+
+df1 = interval(df, 
+             hour = hour, 
+             minute = minute)
+
+
+fig = plotMappingIPP(df1)
+
+
+fig.savefig(f"{hour}{minute}.png", 
+         dpi = 500)

@@ -92,6 +92,6 @@ def main():
                  y = 0.95)
     
     
-    #save(fig, filename = "sequential_parameters.png")
+    save(fig, filename = "sequential_parameters.png")
     
 main()

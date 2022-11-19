@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import shapely.geometry as sgeom
 from cartopy.geodesic import Geodesic
+import cartopy.crs as ccrs
 from sub_ionospheric_point import convert_coords
 import datetime 
 from build import paths
@@ -19,11 +20,11 @@ def get_coords_from_sites(station, dat):
      return lon, lat
  
     
-def plot_square_area(ax, 
+def square_area(ax, 
                    lat_min = -12, 
                    lat_max = -2, 
                    lon_max = -32, 
-                   lon_min = -42):
+                   lon_min = -42, lw = 4):
     
     
     """Plotting square area by coords limits"""
@@ -31,7 +32,7 @@ def plot_square_area(ax,
     ax.plot([lon_min, lon_max, lon_max, lon_min, lon_min], 
             [lat_min, lat_min, lat_max, lat_max, lat_min],
              color='black', 
-             linewidth = 1, 
+             linewidth = lw, 
              marker='.',
              transform=ccrs.PlateCarree(), 
              )
