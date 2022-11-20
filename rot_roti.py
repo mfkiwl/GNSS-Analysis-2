@@ -36,6 +36,8 @@ def running(x, N):
 
 def rot(stec, time, length = 1, gap_delta = 15, N = 10):
     
+    """Rate of TEC"""
+    
     gaps = find_gaps(time, 
                      gap_delta = gap_delta)
     
@@ -68,7 +70,7 @@ def rot(stec, time, length = 1, gap_delta = 15, N = 10):
 
 
 def roti(stec, time, step = 4, length = 1):
-
+    """Rate of TEC Index"""
     dtime = [(i.hour + i.minute/60. + i.second/(3600.)) 
                     for i in time]
 
