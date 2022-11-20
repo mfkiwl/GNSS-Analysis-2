@@ -3,6 +3,7 @@ import matplotlib.dates as dates
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 from plotConfig import *
 import datetime 
 from build import tex_path
@@ -77,7 +78,7 @@ def main():
     df.index = pd.to_datetime(df.index)
     date = df.index[0].strftime("%d de %B de %Y")
     
-    fig, ax = plt.subplots(figsize = (35, 22), 
+    fig, ax = plt.subplots(figsize = (35, 25), 
                           nrows = 4,
                           ncols = 2, 
                           sharex = 'col')
@@ -87,6 +88,9 @@ def main():
     
     for ncol, prn in enumerate(["R07", "R24"]):
         plotSequetialParameters(df, prn, ncol, ax)
+        
+        
+    text_painels(ax, x = 0.01, y = 0.85)
         
     fig.suptitle(f"Estação: {station.upper()}, {date}", 
                  y = 0.95)
