@@ -1,23 +1,25 @@
-import pandas as pd
 import os
-from plotConfig import *
-from plot.plotMappingRange import *
+import plotConfig as p
+import datetime
+import plot.plotMappingRange as ran
 from build import paths, tex_path
+import matplotlib.pyplot as plt
+
 
 def plotNortheastInstrumentation():
-    p = mapping(width = 20, heigth = 20, ncols = 1 )
+    map = p.mapping(width = 20, heigth = 20, ncols = 1 )
     
     
-    fig, ax = p.subplots_with_map()
+    fig, ax = map.subplots_with_map()
     
-    p.mapping_attrs(ax, 
+    map.mapping_attrs(ax, 
                     step_lat = 2, step_lon = 2,
                     lat_min = -12, lat_max = -2, 
                     lon_max = -32, lon_min = -42)
     
     
     
-    plotStations(ax, 
+    ran.plotStations(ax, 
                 date = datetime.date(2014, 1, 1), 
                 color = "green", 
                 markersize = 15, 
@@ -28,7 +30,7 @@ def plotNortheastInstrumentation():
                 lon_min = -42)
     
     
-    plot_range_stations(ax)
+    ran.plot_range_stations(ax)
     
     
     size = 300
@@ -54,19 +56,22 @@ def plotNortheastInstrumentation():
               "Imageador (Cariri)", 
               "Ionossonda (Fortaleza)"]
     
-    leg = plt.legend([l1, l2, l3], labels, 
+    plt.legend([l1, l2, l3], labels, 
                      fontsize = 30,
                      loc = "upper right", 
                      )
     
     return fig
 
+def main():
 
-fig = plotNortheastInstrumentation()
-
-path_to_save = os.path.join(tex_path("results"), 
-                            "northeast_region.png")
-#print(path_to_save)
-
-fig.savefig(path_to_save ,
-            dpi = 300)
+    fig = plotNortheastInstrumentation()
+    
+    path_to_save = os.path.join(tex_path("results"), 
+                                "northeast_region.png")
+    
+    
+    fig.savefig(path_to_save, dpi = 100)
+    
+    
+    
