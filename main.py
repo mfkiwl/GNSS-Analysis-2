@@ -10,10 +10,27 @@ import pandas as pd
 def run_for_all_prns(path:str, 
                      filename: str, 
                      save:bool = True):
+    """
     
-    
-    """Read RINEX file with, get compute relative TEC"""
-    
+    Read RINEX file with, get compute relative TEC
+    Parameters
+    ----------
+    path : str
+        Path root (see build.py).
+    filename : str
+        station name from file. example `alar.txt`
+    save : bool, optional
+        Save results. The default is True.
+
+    Returns
+    -------
+    prn_data : TYPE
+        DESCRIPTION.
+    TYPE
+        DESCRIPTION.
+
+    """
+        
     infile = os.path.join(path.rinex, filename)
     
     data = load_receiver(infile)
@@ -45,16 +62,17 @@ def run_for_all_prns(path:str,
     return prn_data, data.attrs
 
 
-def run_for_all_files(path):
+def run_for_all_files(path:str):
     
-    """Enter with the root path and run for all files in directory"""
+    """
+    Enter with the root path and run for all files in directory
+    """
     
     _, _, files = next(os.walk(path.rinex))
     
     out_prns = []
     out_dict = {}
-    create_folder = folder(path.process)
-        
+    
     for filename in files:
         
         if filename.endswith(f".{path.ext_rinex}"):
@@ -75,9 +93,25 @@ def run_for_all_days(year:str,
                      start:int = 1, 
                      end:int = 365, 
                      save_prn:bool = True):
-    
-    prn_in_year = []
-    
+    """
+    Parameters
+    ----------
+    year : str
+        DESCRIPTION.
+    root : str
+        DESCRIPTION.
+    start : int, optional
+        DESCRIPTION. The default is 1.
+    end : int, optional
+        DESCRIPTION. The default is 365.
+    save_prn : bool, optional
+        DESCRIPTION. The default is True.
+
+    Returns
+    -------
+    None.
+
+    """    
     for doy in range(start, end + 1):
         
         try:
@@ -89,15 +123,15 @@ def run_for_all_days(year:str,
             continue
          
         
-        
+def main():
 
-start_time = time.time()
-year = 2014
-doy = 1
-root = "D:\\"
-path = paths(year, doy, root = root)
-
-run_for_all_files(path)
-print("--- %s hours ---" % ((time.time() - start_time) / 3600))
+    start_time = time.time()
+    year = 2014
+    doy = 1
+    root = "D:\\"
+    path = paths(year, doy, root = root)
+    
+    run_for_all_files(path)
+    print("--- %s hours ---" % ((time.time() - start_time) / 3600))
 
 
