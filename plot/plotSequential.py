@@ -52,7 +52,7 @@ def plotSequetialParameters(df, prn, ncol, ax):
     ax[3, ncol].set(ylabel = "ROTI (TECU/min)", 
               ylim = [0, 6], 
               yticks = np.arange(0, 6, 1),
-              xlabel = "Tempo (UT)")
+              xlabel = "Hora (UT)")
 
     ax[3, ncol].xaxis.set_major_formatter(dates.DateFormatter('%H'))
     ax[3, ncol].xaxis.set_major_locator(dates.HourLocator(interval = 1))
@@ -62,9 +62,7 @@ def save(fig, filename = "sequential_parameters.png"):
     path_to_save = os.path.join(tex_path("methods"), 
                                 filename)
     
-    fig.savefig(path_to_save,
-                dpi = 500
-                )
+    fig.savefig(path_to_save)
         
 def main():
     infile = "database/examples/"
@@ -78,7 +76,7 @@ def main():
     df.index = pd.to_datetime(df.index)
     date = df.index[0].strftime("%d de %B de %Y")
     
-    fig, ax = plt.subplots(figsize = (35, 25), 
+    fig, ax = plt.subplots(figsize = (40, 30), 
                           nrows = 4,
                           ncols = 2, 
                           sharex = 'col')
@@ -96,6 +94,6 @@ def main():
                  y = 0.95)
     
     
-    save(fig, filename = "sequential_parameters.png")
+    #save(fig, filename = "sequential_parameters.png")
     
 main()

@@ -8,7 +8,19 @@ import plotConfig as p
 
 
 
-def load_roti(infile):
+def load_roti(infile: str):
+    """
+    Parameters
+    ----------
+    infile : str
+        DESCRIPTION.
+
+    Returns
+    -------
+    TYPE
+        DESCRIPTION.
+
+    """
     df = pd.read_csv(infile, index_col = 0)
     df.index = pd.to_datetime(df.index)
     df["lon"] = df["lon"] - 360
@@ -19,6 +31,26 @@ def interval(df,
              hour = 0, 
              minute = 0, 
              delta = 2):
+    """
+    
+
+    Parameters
+    ----------
+    df : TYPE
+        DESCRIPTION.
+    hour : TYPE, optional
+        DESCRIPTION. The default is 0.
+    minute : TYPE, optional
+        DESCRIPTION. The default is 0.
+    delta : TYPE, optional
+        DESCRIPTION. The default is 2.
+
+    Returns
+    -------
+    TYPE
+        DESCRIPTION.
+
+    """
     
     dt = df.index[0]
     
@@ -34,9 +66,25 @@ def interval(df,
 
 
 
-def plotMappingIPP(df, hour, minute):
-   
+def plotMappingIPP(df:pd.DataFrame, hour:int, minute:int):
+    """
     
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DESCRIPTION.
+    hour : int
+        DESCRIPTION.
+    minute : int
+        DESCRIPTION.
+
+    Returns
+    -------
+    fig : TYPE
+        DESCRIPTION.
+
+    """
     map = p.mapping(width = 20, 
                 heigth = 20,
                 ncols = 1 )
@@ -78,11 +126,10 @@ def plotMappingIPP(df, hour, minute):
 def choose_a_time(infile:str, 
                   hour:int = 21, 
                   minute:int = 0, 
-                  save:bool = False)-> plt.figure:
+                  save:bool = False):
    
-    """
-    
-    """
+
+
     
     df = interval(load_roti(infile), 
                    hour = hour, 
