@@ -1,24 +1,21 @@
-# O GNSS (pipeline de dados)
+# GNSS (data pipeline)
 
-Este repositório tem como objetivo descrever o processamento de dados de GNSS a fim de obter mapas de TEC (conteúdo eletrônico total) da ionosfera. O TEC pode ser expresso pela integral do número de elétrons ao longo do caminho óptico entre o satélite e receptor, ou seja:
+This repository aims to describe the processing of GNSS data in order to obtain TEC (total electronic content) maps of the ionosphere. The TEC can be expressed by the integral of the number of electrons along the optical path between the satellite and the receiver, that is:
 
 $$ TEC = \int_{\text{receptor}}^{\text{satélite}} N_e \cdot ds$$
 
-## Ponto ionosférico (Ionospheric Piercing Point, IPP)
+## Ionospheric Piercing Point -IPP
 
 
 
-## Detecção e remoção de ciclo de perda (Cycle-Slips)
+## Cycle-Slips detection
 
 
-## TEC relativo
+## Realtive TEC - RTE
 
+## TEC rate
 
-## Removação de "bias" (Differential Code Bias, DCBs)
+### ROT
 
+### ROTI
 
-## Trajetórias dos satélites (PRNs)
-
-## Cálculo do ROTI
-
-### Detectando gaps
