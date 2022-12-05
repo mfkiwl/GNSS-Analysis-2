@@ -75,11 +75,14 @@ def plotMappingIPP(df, hour, minute):
 
 
 
-def choose_a_time(infile, 
-                  hour = 21, 
-                  minute = 0, save = False):
+def choose_a_time(infile:str, 
+                  hour:int = 21, 
+                  minute:int = 0, 
+                  save:bool = False)-> plt.figure:
    
+    """
     
+    """
     
     df = interval(load_roti(infile), 
                    hour = hour, 
@@ -90,6 +93,8 @@ def choose_a_time(infile,
     
     if save:
         fig.savefig(f"{hour}{minute}.png", dpi = 100)
+        
+    return fig
         
 def main():  
     
