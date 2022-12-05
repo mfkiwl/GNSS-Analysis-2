@@ -1,10 +1,9 @@
-import cartopy.feature as cf
-import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
+import pandas as pd
 import numpy as np
 import datetime
 from plot.plotMappingRange import square_area
-from plotConfig import *
+import plotConfig as p
 
 
 
@@ -38,14 +37,14 @@ def interval(df,
 def plotMappingIPP(df, hour, minute):
    
     
-    p = mapping(width = 20, 
+    map = p.mapping(width = 20, 
                 heigth = 20,
                 ncols = 1 )
     
     
-    fig, ax = p.subplots_with_map()
+    fig, ax = map.subplots_with_map()
     
-    p.mapping_attrs(ax, 
+    map.mapping_attrs(ax, 
                     step_lat = 10, step_lon = 10,
                     lat_min = -35, lat_max = 5, 
                     lon_max = -30, lon_min = -80)
@@ -60,11 +59,11 @@ def plotMappingIPP(df, hour, minute):
                vmax = 5)
     
     ticks = np.arange(0, 6, 1)
-    colorbar_setting(img, ax, ticks)
+    p.colorbar_setting(img, ax, ticks)
     
-    #square_area(ax, lw = 6)
-    
-    p.equator(ax)
+    square_area(ax, lw = 6)
+
+    map.equator(ax)
     
     date = df.index[0].strftime("%d/%m/%Y") 
     time = datetime.time(hour, minute).strftime("%H:%M")
@@ -77,8 +76,8 @@ def plotMappingIPP(df, hour, minute):
 
 
 def choose_a_time(infile, 
-                    hour = 21, 
-                    minute = 0, save = False):
+                  hour = 21, 
+                  minute = 0, save = False):
    
     
     
@@ -90,8 +89,15 @@ def choose_a_time(infile,
     fig = plotMappingIPP(df, hour, minute)
     
     if save:
-        fig.savefig(f"{hour}{minute}.png", dpi = 500)
+        fig.savefig(f"{hour}{minute}.png", dpi = 100)
         
 def main():  
-    infile = "database/roti/2014/001.txt"
-    choose_a_time(infile, hour = 21, minute = 0, save = True)
+    
+    
+    for day, hour in zip([1, 2, 2, 2], 
+                         [21, 1, 3, 7]):
+        
+        infile = f"database/roti/2014/00{day}.txt"
+        choose_a_time(infile, hour = hour, minute = 0, save = True)
+    
+main()
