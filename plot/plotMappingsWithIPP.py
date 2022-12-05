@@ -35,7 +35,7 @@ def interval(df,
 
 
 
-def plotMappingIPP(df):
+def plotMappingIPP(df, hour, minute):
    
     
     p = mapping(width = 20, 
@@ -46,8 +46,8 @@ def plotMappingIPP(df):
     fig, ax = p.subplots_with_map()
     
     p.mapping_attrs(ax, 
-                    step_lat = 5, step_lon = 5,
-                    lat_min = -35, lat_max = 10, 
+                    step_lat = 10, step_lon = 10,
+                    lat_min = -35, lat_max = 5, 
                     lon_max = -30, lon_min = -80)
     
     img = ax.scatter(df.lon, 
@@ -62,7 +62,8 @@ def plotMappingIPP(df):
     ticks = np.arange(0, 6, 1)
     colorbar_setting(img, ax, ticks)
     
-    square_area(ax, lw = 6)
+    #square_area(ax, lw = 6)
+    
     p.equator(ax)
     
     date = df.index[0].strftime("%d/%m/%Y") 
@@ -73,25 +74,24 @@ def plotMappingIPP(df):
     
     return fig
 
-infile = "database/roti/2014/002.txt"
-
-df = load_roti(infile)
-
-print(df)
-
-#%%
-
-hour = 7
-minute = 0
 
 
-df1 = interval(df, 
-             hour = hour, 
-             minute = minute)
-
-
-fig = plotMappingIPP(df1)
-
-
-fig.savefig(f"{hour}{minute}.png", 
-         dpi = 500)
+def choose_a_time(infile, 
+                    hour = 21, 
+                    minute = 0, save = False):
+   
+    
+    
+    df = interval(load_roti(infile), 
+                   hour = hour, 
+                   minute = minute)
+    
+    
+    fig = plotMappingIPP(df, hour, minute)
+    
+    if save:
+        fig.savefig(f"{hour}{minute}.png", dpi = 500)
+        
+def main():  
+    infile = "database/roti/2014/001.txt"
+    choose_a_time(infile, hour = 21, minute = 0, save = True)
