@@ -1,8 +1,11 @@
 import gnsscal
 import datetime
-import numpy as np
 import os
 
+
+def date_from_doy(year: int, doy:int) -> datetime.datetime:
+    """Return date from year and doy"""
+    return datetime.date(year, 1, 1) + datetime.timedelta(doy - 1)
 
 def gpsweek_from_date(date: datetime.datetime) -> tuple:
     """Return GPS week and number from date"""
@@ -16,14 +19,10 @@ def doy_from_gpsweek(week: int, number: int) -> tuple:
     """Return year and doy from gps week"""
     return gnsscal.gpswd2yrdoy(week, number)
 
-def date_from_gpsweek(week, number):
+def date_from_gpsweek(week: int, number:int) -> datetime.date:
     """Return date from gps week"""
     year, doy = doy_from_gpsweek(week, number)
     return date_from_doy(year, doy)
-
-def date_from_doy(year: int, doy:int) -> datetime.datetime:
-    """Return date from year and doy"""
-    return datetime.date(year, 1, 1) + datetime.timedelta(doy - 1)
 
 def day_and_month(year: int, doy:int) -> tuple:
     """Get month and day from year and doy"""
@@ -42,10 +41,8 @@ def delete_files(infile, extension = ".22d"):
             except Exception:
                 print(f"Could not delete {filename}")
 
-
     
-    
-def tec_fname(filename):
+def tec_fname(filename: str) -> datetime.datetimw:
     """Convert TEC filename (EMBRACE format) to datetime"""
     args = filename.split('_')
     date = args[1][:4] + '-' + args[1][4:6]+ '-' +args[1][-2:] 
