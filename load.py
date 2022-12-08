@@ -5,7 +5,6 @@ import datetime
 import os
 import json 
 import ast
-from build import paths, folder
 
 
 
@@ -65,7 +64,9 @@ class load_receiver(object):
         return self.obs.sv.values
 
 
-def interpolate_orbits(infile, prn, parameter = "position"):
+def interpolate_orbits(infile: str, 
+                       prn: str, 
+                       parameter: str = "position") -> pd.DataFram:
     
     obs = gr.load(infile)
     
@@ -91,21 +92,6 @@ def interpolate_orbits(infile, prn, parameter = "position"):
     res.columns.names = [prn]
     
     return res.interpolate(method = 'spline', order = 5)
-
-
-
-
-def load_all_process(infile, filename):
-    
-    df = pd.read_csv(os.path.join(infile, filename), 
-                     delim_whitespace = True, 
-                     index_col = "time")
-
-    df.index = pd.to_datetime(df.index)
-    
-    df["lon"] = df["lon"] - 360
-    
-    return df
 
 
 def save_attrs(path: str, out_dict: dict):
