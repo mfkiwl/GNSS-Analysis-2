@@ -7,13 +7,14 @@ from pathlib import Path
 
 
 class paths(object):
-    
+    """Construct file paths from input date (year and doy)"""
+
     def __init__(self, 
                  year: int = 2014, 
                  doy: int = 1, 
                  root = str(Path.cwd())):
         
-        """Construct file paths from input date (year and doy)"""
+        
         
         self.date = date_from_doy(year, doy)
         self.week, self.number = gpsweek_from_date(self.date)
@@ -44,7 +45,6 @@ class paths(object):
     def all_process(self):
         return os.path.join(self.current_path, "all_process", 
                             self.year, self.doy)
-    
     @property
     def roti(self):
         return os.path.join(self.current_path, "roti", 
@@ -131,8 +131,20 @@ def folder(path_to_create: str):
     
     return path_to_create
 
-def tex_path(folder):
-    
+def tex_path(folder:str) -> str:
+    """
+
+    Parameters
+    ----------
+    folder : str
+        Folder name in latex repository.
+
+    Returns
+    -------
+    path: str
+        DESCRIPTION.
+
+    """
     
     latex = "G:\\My Drive\\Doutorado\\Modelos_Latex_INPE\\docs\\Proposal\\Figures\\"
     return os.path.join(latex, folder)
