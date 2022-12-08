@@ -31,15 +31,15 @@ class constants(object):
             
         elif prn[0] == "R":
             
-            numbers = [1, -4, 5, 6, 1, -4, 5, 
+            channel = [1, -4, 5, 6, 1, -4, 5, 
                        6, -2, -7, 0,-1,-2,-7,
                        0,-1,4,-3,3,2,4,-3,3,2, 
                        np.nan,-6]
             
             num = int(prn[1:]) - 1
             
-            F1 = 1602e6 + numbers[num] * 562.5e3
-            F2 = 1246e6 + numbers[num] * 437.5e3
+            F1 = 1602e6 + channel[num] * 562.5e3
+            F2 = 1246e6 + channel[num] * 437.5e3
             
         else:
             raise(f"For while doesnt have frequencies for {prn}")
