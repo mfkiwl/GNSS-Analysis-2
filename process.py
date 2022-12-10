@@ -10,13 +10,14 @@ from tqdm import tqdm
 
 
 
-def load_slant_tec(path,
-                   prn, 
-                   station) -> pd.DataFrame:
+def load_slant_tec(path: str,
+                   prn: str, 
+                   station: str) -> pd.DataFrame:
     
     """Read processed STEC data"""
     
     tec_path = path.fn_process(station)
+    
     try:
         tec = pd.read_csv(tec_path, 
                       delimiter = ",", 
@@ -26,6 +27,7 @@ def load_slant_tec(path,
         tec = pd.read_csv(tec_path, 
                       delimiter = ";", 
                       index_col = "time")
+        
     tec.index = pd.to_datetime(tec.index)
     
     return tec.loc[:, [prn]].dropna()
@@ -64,10 +66,10 @@ def get_prns(path, station)-> pd.DataFrame:
     return df.loc[:, station].values
 
 
-def compute_roti(path, 
-                 prn,
-                 station, 
-                 elevation = 30) -> pd.DataFrame:
+def compute_roti(path: str, 
+                 prn: str,
+                 station: str, 
+                 elevation: float = 30.0) -> pd.DataFrame:
     
     tec = join_data(path, prn, station)
     
@@ -80,7 +82,7 @@ def compute_roti(path,
     dtime, droti = roti(stec, time)
     
     new_dat = df1.loc[df1.index.isin(dtime), 
-                            ["lat", "lon", "el"]]
+                      ["lat", "lon", "el"]]
     
     new_dat["roti"] = droti
     
@@ -107,7 +109,8 @@ def run_for_all_prns(path, station):
     return df
 
 
-def run_for_all_stations(path, save = True):
+def run_for_all_stations(path: str, 
+                         save: bool = True) -> pd.DataFrame:
     
     
     _, _, files = next(os.walk(path.process))
@@ -128,9 +131,11 @@ def run_for_all_stations(path, save = True):
     return df
 
 
-def compute_for_prns(year = 2014,  
-             doy = 1, 
-             station =  "ceft"):
+def compute_for_prns(year: int = 2014,  
+                     doy: int = 1, 
+                     station: str =  "ceft"):
+    
+
 
     path = paths(year, doy)
     out = []
@@ -147,7 +152,8 @@ def compute_for_prns(year = 2014,
     df.to_csv("database/examples/ceft.txt", 
               sep = ",", 
               index = True)
-
+    
+    return df
 
 def run_for_all_days(year: str, 
                      root: str, 
@@ -165,11 +171,14 @@ def run_for_all_days(year: str,
             
         except Exception:
             continue
+        
+        
+def main():
          
-start_time = time.time()
-compute_for_prns(year = 2014,  
-             doy = 1, 
-             station =  "ceft")
-print("--- %s hours ---" % ((time.time() - start_time) / 3600))
+    start_time = time.time()
+    compute_for_prns(year = 2014,  
+                 doy = 1, 
+                 station =  "ceft")
+    print("--- %s hours ---" % ((time.time() - start_time) / 3600))
 
 
