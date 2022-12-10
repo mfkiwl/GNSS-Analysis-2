@@ -59,25 +59,28 @@ def start_datetime(infile):
 lines = open(infile, "r").readlines()
 
 
-def get_data(lines):
-    current = lines[15:33]
+def get_epoch(lines):
+    epoch = []
+    indexes = []
+    for i in range(15, len(lines)):
+        current = lines[i]
+        if len(current) == 69:
+            
+            res = (lines[i].replace("\n", "") + 
+                            lines[i + 1].replace("\n", "").strip())
+                            
+            epoch.append(res.split("  ")[-1][2:])
+            indexes.append(i)
+            
+    return epoch, indexes
+        
+def get_prns(epoch):
+    prns_list = []
+    for prns in epoch:
     
-    
-    epoch = (current[0].replace("\n", "") + current[1].strip()).split("  ")
-    
-    
-    prns = epoch[-1].split(" ")[1]
-    
-    prns_list = [prns[2:][y - 3: y] for y in 
-                 range(3, len(prns[2:]) + 3, 3)]
-    
-    
-    
-    one = current[2:][0].split("  ")
-    
-    #for i in range(len(one)):
-       # print(one[i][:14])
-       
-    print(one)
-    #date = start_datetime(infile)
-get_data(lines)
+        prns_list.append([prns[2:][y - 3: y] for y in 
+                          range(3, len(prns[2:]) + 3, 3)])        
+    return prns_list
+
+epoch, indexes = get_epoch(lines)
+prns_list = get_prns(epoch)
