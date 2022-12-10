@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 
 def find_gaps(time, gap_delta = 15):
     
@@ -20,23 +19,28 @@ def find_gaps(time, gap_delta = 15):
     return index_of_gaps
 
 
-def rot_func(stec, time, length = 1):
+def rot_func(stec: list[float], 
+             time: list[datetime], 
+             length: int = 1) -> list:
+    
 
     delta_tec = (np.roll(stec, -1) - stec)
     delta_time = np.array((np.roll(time, -1) - time).astype('timedelta64[s]')).astype('float64')
     
     step_range = slice(length, len(delta_tec) - length)
-    
-    rot_vals = (delta_tec[step_range] / (delta_time[step_range]))*60.
-    
-    return rot_vals
 
-def running(x, N):
+    return (delta_tec[step_range] / (delta_time[step_range]))*60.
+
+def running(x: list, N: int) -> np.array:
     return np.convolve(x, np.ones(N)/N, mode='same')
 
-def rot(stec, time, length = 1, gap_delta = 15, N = 10):
+def rot(stec: list[float], 
+        time: list[datetime], 
+        length: int = 1, 
+        gap_delta: int = 15, 
+        N: int = 10):
     
-    """Rate of TEC"""
+    """Compute Rate of Total Electron Content (ROT)"""
     
     gaps = find_gaps(time, 
                      gap_delta = gap_delta)
@@ -49,7 +53,6 @@ def rot(stec, time, length = 1, gap_delta = 15, N = 10):
    
         t = time[gaps[num]]
         s = stec[gaps[num]]
-        
         
         delta_tec = (np.roll(s, -1) - s)
         delta_time = np.array((np.roll(t, -1) - t).astype('timedelta64[s]')).astype('float64')
@@ -70,9 +73,9 @@ def rot(stec, time, length = 1, gap_delta = 15, N = 10):
 
 
 def roti(stec, time, step = 4, length = 1):
-    """Rate of TEC Index"""
-    dtime = [(i.hour + i.minute/60. + i.second/(3600.)) 
-                    for i in time]
+    """Compute Rate of Total Electron Content (ROT) index"""
+    #dtime = [(i.hour + i.minute/60. + i.second/(3600.)) 
+         #           for i in time]
 
     out_roti = []
     out_time = []
