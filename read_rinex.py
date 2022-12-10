@@ -1,5 +1,6 @@
+import pandas as pd
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 infile = "database/rinex/2014/alar0011.14o"
 
@@ -51,10 +52,16 @@ def start_datetime(infile):
     hour = int(first_obs[3])
     minute = int(first_obs[4])
     sec = int(float(first_obs[5]))
-
-    return datetime(year, month, day, 
+    
+    
+    start = datetime(year, month, day, 
                     hour, minute, sec)
 
+    end = start + timedelta(hours = 23, 
+                            minutes = 59, 
+                            seconds = 45)
+
+    return pd.date_range(start, end, freq = "15s")
 
 lines = open(infile, "r").readlines()
 
@@ -84,3 +91,8 @@ def get_prns(epoch):
 
 epoch, indexes = get_epoch(lines)
 prns_list = get_prns(epoch)
+
+num = 0
+elem = lines[indexes[num] + 2: indexes[num + 1]]
+
+print(elem[0].lstrip())
