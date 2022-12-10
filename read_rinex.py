@@ -2,48 +2,53 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 
-infile = "database/rinex/2014/alar0011.14o"
 
 def get_header(infile):
-
     lines = open(infile, "r").readlines()
-    
-    header = []
+    dict_infos = {}
     
     for line in lines:
         
         if "END OF HEADER" in line:
             break
         else:
-            header.append(line.strip())
+                    
+            info_obj = _remove_values(line[:60].split("   "))
+           
+            info_type = line[60:].title().replace(" ", "").replace("\n", "")
             
-    return header 
+            dict_infos[info_type] = _remove_values(info_obj)
 
-def attributes(infile):
-    
-    header = get_header(infile)
-    
-    dict_infos = {}
-    
-    for num in range(len(header)):
-        elements = header[num].split("    ")
-        
-        info_type = elements[-1].replace(" ", "")
-        
-        info_obj = [i for i in elements[:-1] if i != ""]
-    
-        dict_infos[info_type] = info_obj
-    
-    
+            
     return dict_infos
 
 
-def start_datetime(infile):
+def _split_prns(epoch):
+    prns_list = []
+    for prns in epoch:
+    
+        prns_list.append([prns[2:][y - 3: y] for y in 
+                          range(3, len(prns[2:]) + 3, 3)])        
+    return prns_list
 
-    attrs = attributes(infile)
+
+def _replace_values(list_to_replace, 
+                   item_to_replace = "", 
+                   item_to_replace_with = np.nan):
+    return [item_to_replace_with if item == item_to_replace 
+            else item for item in list_to_replace]
+
+
+def _remove_values(list_to_remove, item_to_remove = ""):
+    return [item.strip() for item in list_to_remove if item != ""]
+
+
+def _times(infile):
+
+    attrs = get_header(infile)
     
-    first_obs = attrs['TIMEOFFIRSTOBS']
-    
+    first_obs = attrs['TimeOfFirstObs']
+    interval = attrs["Interval"][0][:2]
     
     year = int(first_obs[0])
     month = int(first_obs[1])
@@ -61,76 +66,119 @@ def start_datetime(infile):
                             minutes = 59, 
                             seconds = 45)
 
-    return pd.date_range(start, end, freq = "15s")
+    return pd.date_range(start, end, freq = f"{interval}s")
 
-lines = open(infile, "r").readlines()
-
-
-def get_epoch(lines):
-    epoch = []
-    indexes = []
-    for i in range(15, len(lines)):
-        current = lines[i]
-        if len(current) == 69:
-            
-            res = (lines[i].replace("\n", "") + 
-                            lines[i + 1].replace("\n", "").strip())
-                            
-            epoch.append(res.split("  ")[-1][2:])
-            indexes.append(i)
-            
-    return epoch, indexes
-        
-def get_prns(epoch):
-    prns_list = []
-    for prns in epoch:
+def _get_data_for_each_epoch(elem, prns_list, time):
     
-        prns_list.append([prns[2:][y - 3: y] for y in 
-                          range(3, len(prns[2:]) + 3, 3)])        
-    return prns_list
-
-
-
-
-    rows = []
-    for i in elem_list:
-        observable = float(i[:-2])
-        lockphase = i[-2:-1]
-        if lockphase == " ":
-            lockphase = np.nan
-        else:
-            lockphase = int(i[-2:-1])
-        rows.append(observable)
-        rows.append(lockphase)
-        
-    return rows
-num = 0
-
-
-def get_rows(elem_list):
-    epoch, indexes = get_epoch(lines)
-    elem = lines[indexes[num] + 2: indexes[num + 1]]
-    
-    prns_list = get_prns(epoch)
-
-    
-    sv = prns_list[num]
     columns = []
+    
     for j in range(len(elem)):
             
         elemlist = elem[j].lstrip().replace("\n", "")
         
-        L1 = elemlist[0:13]
-        L1lli = elemlist[13:14]
-        L1ssi = elemlist[14:15]
-        C1 = elemlist[17:29]
-        C1ssi = elemlist[30:31]
+        L1 = elemlist[0:13].strip()
+        L1lli = elemlist[13:14].strip()
+        #L1ssi = elemlist[14:15].strip()
+        C1 = elemlist[17:29].strip()
+        #C1ssi = elemlist[30:31].strip()
         L2 = elemlist[32:45].strip()
-        L2lli = elemlist[45:46]
-        P2 = elemlist[47:61]
-        L2ssi = elemlist[61:62]
-        P2ssi = elemlist[62:63]
+        L2lli = elemlist[45:46].strip()
+        P2 = elemlist[47:61].strip()
+        #L2ssi = elemlist[61:62].strip()
+        #P2ssi = elemlist[62:63].strip()
         
-        columns.append([sv[j], L1, L1lli, C1, L2, L2lli, P2])    
+        observables = [time, prns_list[j], L1, L1lli,
+                       C1, L2, L2lli, P2]
+       #lock_indicator = [ ]
+        columns.append(_replace_values(observables))    
         
-    print(columns)
+    return columns
+
+def _get_prns_rows(lines):
+    
+    epoch = []
+    indexes = []
+    
+    for i in range(15, len(lines)):
+        
+        current = lines[i]
+                    
+        if any([i in current 
+                for i in ["G", "R"]]):
+            epoch.append(current.strip())
+            indexes.append(i)
+    return epoch, indexes
+
+
+def _get_epochs(lines):
+    
+    epoch, indexes = _get_prns_rows(lines)
+    
+    epoch_fix = []
+    indexes_fix = []
+    for i in range(0, len(epoch) - 1, 2):
+        
+        res = (epoch[i] + epoch[i + 1]).split("  ")
+        
+        epoch_fix.append(res[-1][2:])
+        indexes_fix.append(indexes[i])
+    
+    return _split_prns(epoch_fix), indexes_fix
+
+def _get_last_epochs(epoch, 
+                    times, 
+                    indexes, 
+                    lines):
+
+    result = []
+    for num in range(1, 3)[::-1]:
+        
+        last = len(epoch) - num
+        
+        if num  == 1:
+            end = None
+        else:
+            end = indexes[-num + 1]
+    
+        elem = lines[indexes[-num] + 2: end]
+    
+        prns_list = epoch[last]
+        time = times[last]
+        result.extend(_get_data_for_each_epoch(elem, prns_list, time))
+    
+    return result
+
+def _get_rows_for_each_time(infile):
+    
+    lines = open(infile, "r").readlines()
+    epoch, indexes = _get_epochs(lines)
+    times =  _times(infile)
+  
+    result = []
+    for num in range(0, len(indexes) - 2):
+ 
+        elem = lines[indexes[num] + 2: indexes[num + 1]]
+        prns_list = epoch[num]
+        time = times[num]
+        result.extend(_get_data_for_each_epoch(elem, 
+                                               prns_list, 
+                                               time))
+        
+    result.extend(_get_last_epochs(epoch, 
+                        times, 
+                        indexes, 
+                        lines))
+
+    cols = ["time", "prn", "L1", "L1lli", "C1", 
+            "L2", "L2lli", "P2"]
+
+    return pd.DataFrame(result, columns = cols)
+
+
+
+
+infile = "database/rinex/2014/alar0011.14o"
+
+df = _get_rows_for_each_time(infile)
+print(df)
+
