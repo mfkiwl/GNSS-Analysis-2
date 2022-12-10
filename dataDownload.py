@@ -1,11 +1,9 @@
 import requests 
 from bs4 import BeautifulSoup 
-import datetime
 import os
 from gnss_utils import gpsweek_from_doy_and_year, date_from_doy
 import zipfile
 from build import paths, folder
-from tqdm import tqdm    
 from unlzw3 import unlzw
 import time
 
@@ -18,9 +16,10 @@ regions = {"region1": ['alar', 'bair', 'brft', 'ceeu',
                        'pbjp', 'peaf', 'pepe', 'recf',
                        'rnmo', 'rnna', 'seaj']}
 
-def unzip_rinex(files, year, path_to_save):
+def unzip_rinex(files:str, year:int, path_to_save:str) -> None:
     
-    """Deleting after unzipping files"""
+    
+    
     
     zip_path = os.path.join(path_to_save, files)
     zip_file = zipfile.ZipFile(zip_path, 'r') 
@@ -35,15 +34,14 @@ def unzip_rinex(files, year, path_to_save):
         
         if any(file.endswith(ext) for ext in extensions):
             
-           
             zip_file.extract(file, path_to_save)
             
     zip_file.close()
     os.remove(zip_path)
-        
-def download(url, 
-             href, 
-             path_to_save = ""):
+            
+def download(url:str, 
+             href:str, 
+             path_to_save:str = ""):
     """Function for download from link"""
     remote_file = requests.get(url + href)
 
@@ -56,7 +54,12 @@ def download(url,
                 
     return out_file
 
-def orbit_url(year, doy, network = "IGS", const = "igr"):
+def orbit_url(year:int, 
+              doy:int, 
+              network:str = "IGS", 
+              const:str = "igr"):
+    
+    
     
     """Build urls and filenames from year, doy and GNSS system"""
     
@@ -77,14 +80,14 @@ def orbit_url(year, doy, network = "IGS", const = "igr"):
     return filename, url
 
 
-def rinex_url(year, doy, network = "IBGE"):
+def rinex_url(year:int, doy:int, network:str = "IBGE"):
     date = date_from_doy(year, doy)
     doy_str = date.strftime("%j")
     return f"{infos[network]}/{year}/{doy_str}/"
 
 
         
-def request(url, ext = ".zip"):
+def request(url:str, ext:str = ".zip"):
     """Request website from url (RINEX or sp3)"""
     r = requests.get(url)
     s = BeautifulSoup(r.text, "html.parser")
@@ -94,8 +97,8 @@ def request(url, ext = ".zip"):
     return [link['href'] for link in parser if ext in link["href"]]
 
 
-def filter_rinex(url, 
-                 sel_stations = regions["region1"]
+def filter_rinex(url:str, 
+                 sel_stations:list = regions["region1"]
                  ):
   out = []
   for href in request(url):
@@ -107,15 +110,15 @@ def filter_rinex(url,
   return out
 
 
-def run_for_many_days(year = 2014, 
-                      day_start = 1, 
-                      day_end = 366, 
-                      root = "D:\\"):
+def run_for_many_days(year:int = 2014, 
+                      start:int = 1, 
+                      end:int = 366, 
+                      root:str = "D:\\"):
     
     
     """Download for whole year"""
     
-    for doy in range(day_start, day_end, 1):
+    for doy in range(start, end, 1):
        
         try:
             doy
@@ -158,7 +161,8 @@ def unzip_orbit(files):
     os.remove(files)
    
     
-def download_orbit(year, doy, root = "D:\\"):
+def download_orbit(year: int, doy:int, root:str = "D:\\"):
+    
     
     for const in ["igl", "igr"]:
         fname, url = orbit_url(year, doy, 
@@ -173,16 +177,18 @@ def download_orbit(year, doy, root = "D:\\"):
            
                 unzip_orbit(files)
 
-root = "C:\\"
-
-year = 2014
-doy = 2
-start_time = time.time()
-
-download_rinex(year, 
-                doy, 
-                root = "D:\\", 
-                sel_stations = ".zip")
-
-
-print("--- %s minutes ---" % ((time.time() - start_time) / 60))
+def main():
+    
+    root = "C:\\"
+    
+    year = 2014
+    doy = 2
+    start_time = time.time()
+    
+    download_rinex(year, 
+                    doy, 
+                    root = "D:\\", 
+                    sel_stations = ".zip")
+    
+    
+    print("--- %s minutes ---" % ((time.time() - start_time) / 60))
