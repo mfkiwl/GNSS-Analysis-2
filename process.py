@@ -1,15 +1,12 @@
-from sub_ionospheric_point import piercing_points_data
+from iono_piercing_point import piercing_points_data
 import pandas as pd
 import time
 import os
-from build import paths, folder, prns
+from build import paths, prns
 from rot_roti import roti
 import sys       
-import os
 os.path.dirname(sys.executable)
-from pathlib import Path       
 from tqdm import tqdm
-from gnss_utils import date_from_doy
 
 
 
