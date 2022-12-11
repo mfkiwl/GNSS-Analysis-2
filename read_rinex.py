@@ -35,6 +35,7 @@ def _split_prns(epoch):
 def _replace_values(list_to_replace, 
                    item_to_replace = "", 
                    item_to_replace_with = np.nan):
+    
     return [item_to_replace_with if item == item_to_replace 
             else item for item in list_to_replace]
 
@@ -125,49 +126,37 @@ def _get_epochs(lines):
     
     return _split_prns(epoch_fix), indexes_fix
 
-def _get_last_epochs(epoch, 
-                    times, 
-                    indexes, 
-                    lines):
-
-    result = []
-    for num in range(1, 3)[::-1]:
-        
-        last = len(epoch) - num
-        
-        if num  == 1:
-            end = None
-        else:
-            end = indexes[-num + 1]
-    
-        elem = lines[indexes[-num] + 2: end]
-    
-        prns_list = epoch[last]
-        time = times[last]
-        result.extend(_get_data_for_each_epoch(elem, prns_list, time))
-    
-    return result
 
 def _get_rows_for_each_time(infile):
     
     lines = open(infile, "r").readlines()
     epoch, indexes = _get_epochs(lines)
     times =  _times(infile)
-  
+    
     result = []
-    for num in range(0, len(indexes) - 2):
- 
-        elem = lines[indexes[num] + 2: indexes[num + 1]]
+  
+    for num in range(0, len(indexes)):
+        
         prns_list = epoch[num]
         time = times[num]
+        
+        if num == len(indexes) - 2:
+            start = indexes[-2] + 2
+            end = indexes[-1]
+        elif num == len(indexes) - 1:
+            start = indexes[-1] + 2
+            end = None
+        else:
+            start = indexes[num] + 2
+            end = indexes[num + 1]
+            
+        
+        elem = lines[start: end]
+        
+        
         result.extend(_get_data_for_each_epoch(elem, 
                                                prns_list, 
                                                time))
-        
-    result.extend(_get_last_epochs(epoch, 
-                        times, 
-                        indexes, 
-                        lines))
 
     cols = ["time", "prn", "L1", "L1lli", "C1", 
             "L2", "L2lli", "P2"]
@@ -176,9 +165,10 @@ def _get_rows_for_each_time(infile):
 
 
 
+def main():
+    infile = "database/rinex/2014/alar0011.14o"
+    
+    df = _get_rows_for_each_time(infile)
+    print(df)
 
-infile = "database/rinex/2014/alar0011.14o"
-
-df = _get_rows_for_each_time(infile)
-print(df)
-
+main()
