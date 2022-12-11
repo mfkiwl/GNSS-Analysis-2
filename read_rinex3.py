@@ -3,36 +3,51 @@ import numpy as np
 
 infile = "database/rinex/ALMA00BRA_R_20182440000_01D_15S_MO.rnx"
 
-lines = open(infile, "r").readlines()
+
+def _get_obs_types(infile):
+    
+    lines = open(infile, "r").read()
+    
+    num_start = lines.find("ANT # / TYPE")
+    
+    num_end = lines.find("# OF SATELLITES")
+    
+    dat = lines[num_start: num_end].split('\n')[1:-1]
+    
+    sys_obstype = {}
+    for i in range(len(dat)):
+        elem = _remove_values(dat[i][:60].split(" "))
+        sys_obstype[elem[0]] = elem[2:]
+    
+    return sys_obstype
 
 
-def get_header(infile):
-    lines = open(infile, "r").readlines()
+def _get_glonass_slot(infile):
+
+    lines = open(infile, "r").read()
     
-    dict_infos = {}
-    number_satellites = {}
+    num_start = lines.find("OBSERVER / AGENCY")
     
-    for line in lines:
+    num_end = lines.find("GLONASS COD/PHS/BIS")
+    
+    dat = lines[num_start: num_end].split('\n')[1:-1]
+    
+    out = {}
+    for j in range(len(dat)):
+        elem = _remove_values(dat[j][:60].split(" "))
         
-        if "# OF SATELLITES" in line:
-            break
-        else:
-                    
-            info_obj = _remove_values(line[:60].split(" "))
-            info_type = line[60:].title().replace(" ", "").replace("\n", "")
-            dict_infos[info_type] = _remove_values(info_obj)
-
-    return dict_infos
+        if elem[0] == "24":
+            elem = elem[1:]
+        
+        for i in range(0, len(elem) - 1, 2):
             
- 
-
-infos = get_header(infile)
-
-infos
+            out[elem[i]] = elem[i + 1]
+        
+    return out
 
 #%% 
 
-def _split_number_of_obs(string:str) -> list:
+def _split_number_of_obs(string: str) -> list:
     
     out = []
     for num in range(0, len(string), 6):
