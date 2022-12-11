@@ -110,17 +110,21 @@ def _get_interval_time(infile):
     
     dat = lines[num_start: num_end].split('\n')[1:-1]
     
+    res = []
+    
     for j in range(2):
         elem = dat[j].split("   ")[:6]
         
-        out = []
-        for i in elem:
-            new = str(int(float(i.strip())))
-            if len(new) < 2:
-                new = "0" + new
-                
-            out.append(new)
+        year = int(elem[0].strip())
+        month = int(elem[1].strip())
+        day = int(elem[2].strip())
         
-        print(datetime.datetime.strptime("".join(out), "%Y%m%d%H%M%S"))
+        hour = int(elem[3].strip())
+        minute= int(elem[4].strip())
+        sec = int(float(elem[5].strip()))
+        
+        res.append(datetime.datetime(year, month, day, hour, minute, sec))
+        
+    return tuple(res)
     
-
+print(_get_interval_time(infile))
