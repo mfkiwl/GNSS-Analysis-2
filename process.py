@@ -3,7 +3,7 @@ import pandas as pd
 import time
 import os
 from build import paths, prns
-from rot_roti import roti
+from tec_rate import roti
 import sys       
 os.path.dirname(sys.executable)
 from tqdm import tqdm
@@ -90,7 +90,8 @@ def compute_roti(path: str,
     
     return new_dat
 
-def run_for_all_prns(path, station):
+def run_for_all_prns(path: str, 
+                     station: str):
 
     prns = get_prns(path, station)
     

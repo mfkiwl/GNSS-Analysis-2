@@ -1,8 +1,66 @@
 from read_rinex import _remove_values, _replace_values
 import numpy as np
+import datetime
 
 infile = "database/rinex/ALMA00BRA_R_20182440000_01D_15S_MO.rnx"
 
+lines = open(infile, "r").read()
+
+def find(s, ch):
+    return [i for i, ltr in enumerate(s) if ltr == ch]
+indexes = find(lines, ">")
+
+
+#%%
+
+def sep_elements(list_to_sep, length = 16):
+    
+    return [list_to_sep[num: num + length].strip() for num in 
+            range(0, len(list_to_sep), length)]
+
+
+def get_rows(a):    
+    res = [a[:5].strip()]
+    
+   
+    sections = [a[5:67], a[66:130], a[130:]]
+    
+    for item in sections:
+    
+        res.extend(_replace_values(sep_elements(item, 
+                                                length = 16)))
+    if len(res) != 13:
+        res.extend([np.nan] * (13 - len(res)))
+        
+    
+    return res
+
+
+def get_columns(a):
+    
+    out = []
+    for i in range(len(a)):
+    
+        b = a[i]
+        
+        if b[:1] == "S":
+            continue
+        else:
+            out.append(get_rows(b))
+    return out
+
+
+out = []
+
+#for num in range(0, len(indexes), 2):
+    
+    
+   # out.append(get_columns(a))
+    
+a = lines[indexes[-3]:indexes[-2]].split("\n")#[1:-1]
+print(a)
+
+#%%%
 
 def _get_obs_types(infile):
     
@@ -45,6 +103,24 @@ def _get_glonass_slot(infile):
         
     return out
 
+def _get_header(infile):
+    lines = open(infile, "r").read()
+    
+    num_start = 0# lines.find("")
+    
+    num_end = lines.find("OBSERVER / AGENCY")
+    
+    dat = lines[num_start: num_end].split('\n')[:-1]
+    
+    out = {}
+    for line in dat:
+        info_obj = _remove_values(line[:60].split("   "))
+       
+        info_type = line[60:].title().replace(" ", "").replace("\n", "")
+        
+        out[info_type] = _remove_values(info_obj)
+    
+    return out
 #%% 
 
 def _split_number_of_obs(string: str) -> list:
@@ -105,12 +181,9 @@ def _get_number_of_obs(infile):
     return _fixed_format_of_obs(out)
 
 
-out = _get_number_of_obs(infile)
 
-print(out)
 #%%%
 
-import datetime
 
 
 

@@ -6,9 +6,14 @@ import datetime
 from load import load_receiver
 
 
-def relative_tec(time, c1, p2, rtec, prn):
+def relative_tec(time: list, 
+                 c1: list, 
+                 p2:list, 
+                 rtec:list, 
+                 prn:str) -> list:
     
     """Compute the Relative TEC (slant) from the pseudoranges"""
+    
     
     narc = 1
     index_last = 0
@@ -48,6 +53,7 @@ def relative_tec(time, c1, p2, rtec, prn):
     return rtec
 
 def relative_tec_data(df, prn: str = "G01") -> pd.DataFrame:
+    
     
     """
     Read pre-process files (already missing values removed), 
