@@ -1,6 +1,9 @@
 from read_rinex import _remove_values, _replace_values
 import numpy as np
 import datetime
+import pandas as pd
+
+
 
 infile = "database/rinex/ALMA00BRA_R_20182440000_01D_15S_MO.rnx"
 
@@ -13,14 +16,43 @@ indexes = find(lines, ">")
 
 #%%
 
+def _get_interval_time(infile):
+    
+    lines = open(infile, "r").read()
+
+    num_start = lines.find("INTERVAL")
+    
+    num_end = lines.find("END OF HEADER")
+    
+    dat = lines[num_start: num_end].split('\n')[1:-1]
+    
+    res = []
+    
+    for j in range(2):
+        elem = dat[j].split("   ")[:6]
+        
+        year = int(elem[0].strip())
+        month = int(elem[1].strip())
+        day = int(elem[2].strip())
+        
+        hour = int(elem[3].strip())
+        minute= int(elem[4].strip())
+        sec = int(float(elem[5].strip()))
+        
+        res.append(datetime.datetime(year, month, day, hour, minute, sec))
+        
+    return pd.date_range(res[0], res[1], freq = "15s")
+    
+
+
 def sep_elements(list_to_sep, length = 16):
     
     return [list_to_sep[num: num + length].strip() for num in 
             range(0, len(list_to_sep), length)]
 
 
-def get_rows(a):    
-    res = [a[:5].strip()]
+def get_rows(a, time):    
+    res = [time, a[:5].strip()]
     
    
     sections = [a[5:67], a[66:130], a[130:]]
@@ -36,7 +68,7 @@ def get_rows(a):
     return res
 
 
-def get_columns(a):
+def get_columns(a, time):
     
     out = []
     for i in range(len(a)):
@@ -46,19 +78,24 @@ def get_columns(a):
         if b[:1] == "S":
             continue
         else:
-            out.append(get_rows(b))
+            out.append(get_rows(b, time))
     return out
 
-
-out = []
-
-#for num in range(0, len(indexes), 2):
+def get_data(infile, indexes):
+    out = []
+    times = _get_interval_time(infile)
+    for num in range(0, len(indexes) - 1):
+        
+        a = lines[indexes[num]: indexes[num + 1]].split("\n")[1:-1]
+        
+        out.extend(get_columns(a, times[num]))
+        a = lines[indexes[-1]:].split("\n")[1:-1]
+        out.extend(get_columns(a, times[-1]))
+        
+    return out
     
+out = get_data(infile, indexes)
     
-   # out.append(get_columns(a))
-    
-a = lines[indexes[-3]:indexes[-2]].split("\n")#[1:-1]
-print(a)
 
 #%%%
 
@@ -187,32 +224,3 @@ def _get_number_of_obs(infile):
 
 
 
-
-def _get_interval_time(infile):
-    
-    lines = open(infile, "r").read()
-
-    num_start = lines.find("INTERVAL")
-    
-    num_end = lines.find("END OF HEADER")
-    
-    dat = lines[num_start: num_end].split('\n')[1:-1]
-    
-    res = []
-    
-    for j in range(2):
-        elem = dat[j].split("   ")[:6]
-        
-        year = int(elem[0].strip())
-        month = int(elem[1].strip())
-        day = int(elem[2].strip())
-        
-        hour = int(elem[3].strip())
-        minute= int(elem[4].strip())
-        sec = int(float(elem[5].strip()))
-        
-        res.append(datetime.datetime(year, month, day, hour, minute, sec))
-        
-    return tuple(res)
-    
-print(_get_interval_time(infile))
