@@ -2,6 +2,19 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 
+def replace_values(list_to_replace, 
+                   item_to_replace = "", 
+                   item_to_replace_with = np.nan):
+    
+    return [item_to_replace_with if item == item_to_replace 
+            else item for item in list_to_replace]
+
+
+def remove_values(list_to_remove, item_to_remove = ""):
+    return [item.strip() for item in list_to_remove if item != ""]
+
+
+
 
 def get_header(infile):
     lines = open(infile, "r").readlines()
@@ -13,11 +26,11 @@ def get_header(infile):
             break
         else:
                     
-            info_obj = _remove_values(line[:60].split("   "))
+            info_obj = remove_values(line[:60].split("   "))
            
             info_type = line[60:].title().replace(" ", "").replace("\n", "")
             
-            dict_infos[info_type] = _remove_values(info_obj)
+            dict_infos[info_type] = remove_values(info_obj)
 
             
     return dict_infos
@@ -32,16 +45,6 @@ def _split_prns(epoch):
     return prns_list
 
 
-def _replace_values(list_to_replace, 
-                   item_to_replace = "", 
-                   item_to_replace_with = np.nan):
-    
-    return [item_to_replace_with if item == item_to_replace 
-            else item for item in list_to_replace]
-
-
-def _remove_values(list_to_remove, item_to_remove = ""):
-    return [item.strip() for item in list_to_remove if item != ""]
 
 
 def _times(infile):
@@ -90,8 +93,8 @@ def _get_data_for_each_epoch(elem, prns_list, time):
         
         observables = [time, prns_list[j], L1, L1lli,
                        C1, L2, L2lli, P2]
-       #lock_indicator = [ ]
-        columns.append(_replace_values(observables))    
+      
+        columns.append(replace_values(observables))    
         
     return columns
 
@@ -171,4 +174,3 @@ def main():
     df = _get_rows_for_each_time(infile)
     print(df)
 
-main()
