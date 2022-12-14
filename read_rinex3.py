@@ -14,8 +14,6 @@ def find(s, ch):
 indexes = find(lines, ">")
 
 
-#%%
-
 def _get_interval_time(infile):
     
     lines = open(infile, "r").read()
@@ -94,10 +92,7 @@ def get_data(infile, indexes):
         
     return out
     
-out = get_data(infile, indexes)
-    
 
-#%%%
 
 def _get_obs_types(infile):
     
@@ -158,7 +153,6 @@ def _get_header(infile):
         out[info_type] = _remove_values(info_obj)
     
     return out
-#%% 
 
 def _split_number_of_obs(string: str) -> list:
     
@@ -219,8 +213,6 @@ def _get_number_of_obs(infile):
 
 
 
-#%%%
-
-
-
-
+out = get_data(infile, indexes)
+    
+print(pd.DataFrame(out))
