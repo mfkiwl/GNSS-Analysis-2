@@ -55,8 +55,6 @@ class rinex3(object):
         return out
     
     
-
-    
     def header(self, mode = None):
         
         dat = self._get_raw_header()
@@ -218,6 +216,7 @@ class rinex3(object):
         return _fixed_format_of_obs(out)
     
     def get_prn_count(self, prn = "E08"):
+        """Get observables total count for an prn (input)"""
         
         dat = self.number_of_obs
         for i in dat:
@@ -352,19 +351,11 @@ class rinex3(object):
         return pd.DataFrame(dat, columns = columns)
     
   
-        
-    
-    
-
-ge = rinex3(infile)
-
-
-
-
-
 
 
 def main():
+    
+    ge = rinex3(infile)
 
     df = ge.load(mode = "carrierphase")
     
