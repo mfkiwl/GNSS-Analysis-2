@@ -49,11 +49,13 @@ def sep_elements(list_to_sep, length = 16):
             range(0, len(list_to_sep), length)]
 
 
-def get_rows(a, time):    
-    res = [time, a[:5].strip()]
+def get_rows(string_row, time):    
     
-   
-    sections = [a[5:67], a[66:130], a[130:]]
+    res = [time, string_row[:5].strip()]
+
+    sections = [string_row[5:67], 
+                string_row[67:131], 
+                string_row[131:]]
     
     for item in sections:
     
@@ -110,6 +112,9 @@ def _get_obs_types(infile):
         sys_obstype[elem[0]] = elem[2:]
     
     return sys_obstype
+
+def _get_interval(start, end):
+    return 
 
 
 def _get_glonass_slot(infile):
@@ -214,5 +219,77 @@ def _get_number_of_obs(infile):
 
 
 out = get_data(infile, indexes)
-    
-print(pd.DataFrame(out))
+        
+
+def _get_signal(row):
+  
+    return row[:2] + list(map(float, row[10:]))
+
+def _get_pseudoranges(row):
+    tp = row[:2]
+    items = row[2:6]
+    P = []
+    ssi = []
+    for obs in items:
+        
+        if obs != obs:
+            P.append(obs)
+            ssi.append(obs)
+        else:
+            value = float(obs[:-2])
+            ssi_ = int(obs[-2:].strip())
+            
+            P.append(value)
+            ssi.append(ssi_)
+    return tp + P, tp + ssi
+
+
+
+def _get_carrierphases(row):
+    items = row[6:10]
+    tp = row[:2]
+    Ls = []
+    llis = []
+    ssis = []
+    for obs in items:
+        if obs!= obs:
+            Ls.append(obs)
+            llis.append(obs)
+            ssis.append(obs)
+            
+        else:
+            value = float(obs[:-2])
+            lli = obs[-2:-1].strip()
+            ssi = int(obs[-1].strip())
+            
+            if lli == "":
+                lli = np.nan
+            else:
+                lli = int(lli)
+                
+            Ls.append(value)
+            llis.append(lli)
+            ssis.append(ssi)
+    return tp + Ls, tp + llis, tp + ssis
+
+
+#%%
+def load(out, 
+         mode = "pseudorange", 
+         lli = False):
+    res = []
+    for num in range(len(out)):
+        if mode == "pseudorange":
+            P, ssi = _get_pseudoranges(out[num])
+            res.append(P)
+        elif mode == "carrierphase":
+            Ls, llis, ssis = _get_carrierphases(out[num])
+            res.append(Ls)
+        elif mode == "signal":      
+            res.append(_get_signal(out[num]))
+        
+    return pd.DataFrame(res)
+
+print(load(out, 
+         mode = "pseudorange", 
+         lli = False))
