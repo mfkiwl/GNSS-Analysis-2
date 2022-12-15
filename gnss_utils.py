@@ -1,7 +1,7 @@
 import gnsscal
 import datetime
 import os
-
+import numpy as np
 
 def date_from_doy(year: int, doy:int) -> datetime.datetime:
     """Return date from year and doy"""
@@ -29,7 +29,6 @@ def day_and_month(year: int, doy:int) -> tuple:
     date = date_from_doy(year, doy)
     return date.month, date.day
         
-
 def delete_files(infile, extension = ".22d"):
     """Deleting files in directory by extension"""
     _, _, files = next(os.walk(infile))
@@ -50,6 +49,27 @@ def tec_fname(filename: str) -> datetime.datetimw:
     time = time[:2] + ':' + time[2:]
     
     return datetime.datetime.strptime(date + ' ' + time, "%Y-%m-%d %H:%M")
+
+def replace_values(list_to_replace: list, 
+                   item_to_replace: str = "", 
+                   item_to_replace_with: float = np.nan)-> list:
+    """Replace values in list"""
+    return [item_to_replace_with if item == item_to_replace 
+            else item for item in list_to_replace]
+
+
+def remove_values(list_to_remove: list, 
+                  item_to_remove:str = "") -> list:
+    """Remove value in list"""
+    return [item.strip() for item in list_to_remove if item != ""]
+
+def find(s: str, ch: str) -> int:
+    return [i for i, ltr in enumerate(s) if ltr == ch]
+
+def sep_elements(list_to_sep:list, length:int = 16) -> list:
+    """Split elements by length"""
+    return [list_to_sep[num: num + length].strip() for num in 
+            range(0, len(list_to_sep), length)]
 
 
 class fname_attrs(object):
