@@ -2,6 +2,8 @@ import gnsscal
 import datetime
 import os
 import numpy as np
+import typing as T
+
 
 def date_from_doy(year: int, doy:int) -> datetime.datetime:
     """Return date from year and doy"""
@@ -41,7 +43,7 @@ def delete_files(infile, extension = ".22d"):
                 print(f"Could not delete {filename}")
 
     
-def tec_fname(filename: str) -> datetime.datetimw:
+def tec_fname(filename: str) -> datetime.datetime:
     """Convert TEC filename (EMBRACE format) to datetime"""
     args = filename.split('_')
     date = args[1][:4] + '-' + args[1][4:6]+ '-' +args[1][-2:] 
@@ -63,8 +65,12 @@ def remove_values(list_to_remove: list,
     """Remove value in list"""
     return [item.strip() for item in list_to_remove if item != ""]
 
+
+
 def find(s: str, ch: str) -> int:
     return [i for i, ltr in enumerate(s) if ltr == ch]
+
+
 
 def sep_elements(list_to_sep:list, length:int = 16) -> list:
     """Split elements by length"""
@@ -72,9 +78,24 @@ def sep_elements(list_to_sep:list, length:int = 16) -> list:
             range(0, len(list_to_sep), length)]
 
 
+
+def get_interval(stringText: T.Text, 
+                 start:str, 
+                 end:str, 
+                 snum:int = 1, 
+                 enum:int = -1) -> list:
+    
+    """Get section from string text"""
+    start = stringText.find(start)
+    end = stringText.find(end)
+        
+    return stringText[start: end].split('\n')[snum: enum]
+
+
+
 class fname_attrs(object):
     
-    """Attributes of filenames (rinex, orbit and bias)"""
+    """Filenames attributes (rinex, orbit and bias)"""
     
     def __init__(self, fname):
         
