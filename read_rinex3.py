@@ -1,23 +1,11 @@
-from read_rinex import _remove_values, _replace_values
+from gnss_utils import remove_values, replace_values, find, sep_elements, get_interval
 import numpy as np
 import datetime
 import pandas as pd
-
+from read_rinex import header
 
 
 infile = "database/rinex/ALMA00BRA_R_20182440000_01D_15S_MO.rnx"
-
-
-
-def find(s, ch):
-    return [i for i, ltr in enumerate(s) if ltr == ch]
-
-def sep_elements(list_to_sep, length = 16):
-    
-    return [list_to_sep[num: num + length].strip() for num in 
-            range(0, len(list_to_sep), length)]
-
-
 
 
 class rinex3(object):
@@ -26,62 +14,16 @@ class rinex3(object):
         
         self.lines = open(infile, "r").read()
         self.indexes = find(self.lines, ">")
-        
-    
-    def _get_interval(self, 
-                      start, end, 
-                      snum = 1, 
-                      enum = -1):
-        
-        start = self.lines.find(start)
-        end = self.lines.find(end)
-            
-        return self.lines[start: end].split('\n')[snum:enum]
-    
-    def _get_raw_header(self):
-        
-        dat =  self._get_interval("", 
-                                  "OBSERVER / AGENCY", 
-                                  snum = 0)
-        
-        out = {}
-        for line in dat:
-            info_obj = _remove_values(line[:60].split("   "))
-           
-            info_type = line[60:].title().replace(" ", "").replace("\n", "")
-            
-            out[info_type] = _remove_values(info_obj)
-        
-        return out
-    
-    
-    def header(self, mode = None):
-        
-        dat = self._get_raw_header()
-        
-        dict_out = {}
-        for key in dat.keys():
-            
-            if "/" in key:
-                for nkey, value in zip(key.split("/"), 
-                                dat[key]):
-                    dict_out[nkey] = value    
-            else:
-                
-                dict_out[key] = dat[key]
-        if mode == None:     
-            return dict_out
-        else:
-            return dict_out[mode]
+        self.attrs = header(infile).get()
         
     @property    
     def _get_glonass_slot(self):
 
-        dat =  self._get_interval("OBSERVER / AGENCY", 
+        dat =  get_interval("OBSERVER / AGENCY", 
                                   "GLONASS COD/PHS/BIS")
         out = {}
         for j in range(len(dat)):
-            elem = _remove_values(dat[j][:60].split(" "))
+            elem = remove_values(dat[j][:60].split(" "))
             
             if elem[0] == "24":
                 elem = elem[1:]
@@ -95,8 +37,9 @@ class rinex3(object):
     @property
     def interval_time(self):
          
-        dat =  self._get_interval("INTERVAL", 
-                                  "END OF HEADER")
+        dat = get_interval(self.lines, 
+                           "INTERVAL", 
+                           "END OF HEADER")
         res = []
         
         for j in range(2):
@@ -128,7 +71,7 @@ class rinex3(object):
             
             for item in sections:
             
-                res.extend(_replace_values(sep_elements(item, 
+                res.extend(replace_values(sep_elements(item, 
                                                         length = 16)))
             if len(res) != 13:
                 res.extend([np.nan] * (13 - len(res)))
@@ -198,7 +141,8 @@ class rinex3(object):
         
         
     
-        dat =  self._get_interval("# OF SATELLITES", 
+        dat =  get_interval(self.lines, 
+                             "# OF SATELLITES", 
                                   "INTERVAL")
         
         out = []
@@ -230,33 +174,35 @@ class rinex3(object):
     @property
     def _get_obs_types(self):
            
-        dat =  self._get_interval("ANT # / TYPE", 
-                                  "# OF SATELLITES")
+        dat =  get_interval(self.lines, "ANT # / TYPE",  "# OF SATELLITES")
         
         sys_obstype = {}
         for i in range(len(dat)):
-            elem = _remove_values(dat[i][:60].split(" "))
+            elem = remove_values(dat[i][:60].split(" "))
             sys_obstype[elem[0]] = elem[2:]
         
         return sys_obstype
     
     def _get_gnss_types(self, gnss = "E"):
         
+        """Check the first element in string 
+        for to separe the observables"""
+        
         dat = self._get_obs_types
-        pseudorange_types = []
-        carrierphase_types = []
-        signal_types = []
+        pseudos = []
+        carries = []
+        signals = []
         
         for obs in dat[gnss]:
             
-            if "C" in obs:
-                pseudorange_types.append(obs)
-            elif "L" in obs:
-                carrierphase_types.append(obs)    
+            if obs[:1] == "C":
+                pseudos.append(obs)
+            elif obs[:1] == "L":
+                carries.append(obs)    
             else:
-                signal_types.append(obs)
+                signals.append(obs)
             
-        return pseudorange_types, carrierphase_types, signal_types
+        return pseudos, carries, signals
     
     @staticmethod
     def _get_signal(row):
@@ -339,7 +285,8 @@ class rinex3(object):
         dat = self._get_all_data(mode = mode, 
                  lli = False, gnss = gnss)
         
-        p, c, s = self._get_gnss_types(gnss = gnss)
+        p, c, s = self._get_gnss_types(
+                                       gnss = gnss)
         
         if mode == "pseudorange":
             columns = ["time", "prn"] + p
@@ -347,7 +294,7 @@ class rinex3(object):
             columns = ["time", "prn"] + c
         else:
             columns = ["time", "prn"] + s
-            
+        
         return pd.DataFrame(dat, columns = columns)
     
   
@@ -357,15 +304,13 @@ def main():
     
     ge = rinex3(infile)
 
-    df = ge.load(mode = "carrierphase")
+    df = ge.load(mode = "pseudorange", gnss = "G")
     
-    df["time"] = pd.to_datetime(df["time"])
+    #df["time"] = pd.to_datetime(df["time"])
+    print(df)
+    #print(ge._get_gnss_types(gnss = "G"))
     
-    df1 = df.loc[df["prn"] == "E01"].sort_values("time")
-    
-    import matplotlib.pyplot as plt
-    
-    
-    plt.plot(df1["time"], df1["L8X"])        
+    #plt.plot(df1["time"], df1["L8X"])        
 
 
+main()
