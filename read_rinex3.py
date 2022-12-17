@@ -19,8 +19,9 @@ class rinex3(object):
     @property    
     def _get_glonass_slot(self):
 
-        dat =  get_interval("OBSERVER / AGENCY", 
-                                  "GLONASS COD/PHS/BIS")
+        dat =  get_interval(self.lines, 
+                            "OBSERVER / AGENCY", 
+                            "GLONASS COD/PHS/BIS")
         out = {}
         for j in range(len(dat)):
             elem = remove_values(dat[j][:60].split(" "))

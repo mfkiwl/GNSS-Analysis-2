@@ -96,7 +96,7 @@ class header(object):
             return result[arg] 
         
 
-infile = "database/rinex/2014/alar0011.14o"
+
 
 class rinex(object):
     
@@ -106,11 +106,8 @@ class rinex(object):
 
         self.attrs = header(infile).get()
         
-    @staticmethod
-    def _split_prns(epoch):
-        
-        return [[prns[2:][num - 3: num] for num in 
-                range(3, len(prns[2:]) + 3, 3)] for prns in epoch]
+   
+    
     @property
     def _time_interval(self):
 
@@ -136,7 +133,7 @@ class rinex(object):
         return pd.date_range(start, end, freq = f"{interval}s")
     
     @staticmethod
-    def _get_data_for_each_epoch(elem, prns_list, time):
+    def _get_data_for_each_epoch(elem, prns, time):
         
         columns = []
         
@@ -145,20 +142,26 @@ class rinex(object):
             elemlist = elem[j].lstrip().replace("\n", "")
             
             L1 = elemlist[0:13].strip()
+            
             L1lli = elemlist[13:14].strip()
-            #L1ssi = elemlist[14:15].strip()
+           
             C1 = elemlist[17:29].strip()
-            #C1ssi = elemlist[30:31].strip()
+            
             L2 = elemlist[32:45].strip()
+            
             L2lli = elemlist[45:46].strip()
+            
             P2 = elemlist[47:61].strip()
+            
+            obs = replace_values([L1, L1lli, C1, L2, L2lli, P2])
+            
+            out = [time, prns[j]] + list(map(float, obs))
+            
+            #L1ssi = elemlist[14:15].strip()
             #L2ssi = elemlist[61:62].strip()
             #P2ssi = elemlist[62:63].strip()
-            
-            observables = [time, prns_list[j], L1, L1lli,
-                           C1, L2, L2lli, P2]
-          
-            columns.append(replace_values(observables))    
+            #C1ssi = elemlist[30:31].strip()
+            columns.append(out)    
             
         return columns
     
@@ -175,7 +178,7 @@ class rinex(object):
                 current = lines[i]
                             
                 if any([i in current 
-                        for i in ["G", "R"]]):
+                        for i in ["G", "R", "E"]]):
                     epoch.append(current.strip())
                     indexes.append(i)
             return epoch, indexes
@@ -230,10 +233,74 @@ class rinex(object):
         cols = ["time", "prn", "L1", "L1lli", "C1", 
                 "L2", "L2lli", "P2"]
         result =  self._get_rows_for_each_time
-        return pd.DataFrame(result, columns = cols)
-
+        
+        df = pd.DataFrame(result, columns = cols)
+        
+        df.index = df["time"]
+        del df["time"]
+        return df
+    
+    
 infile = "database/rinex/2014/alar0011.14o"
 
-df = rinex(infile).load()
+lines = open(infile, "r").read()
 
-print(df)
+dat = get_interval(lines, "END OF HEADER", None)
+
+
+def _get_prns_rows(lines):
+    
+    epoch = []
+    indexes = []
+    
+    for i in range(15, len(lines)):
+        
+        current = lines[i]
+                    
+        if any([i in current 
+                for i in ["G", "R"]]):
+            epoch.append(current.strip())
+            indexes.append(i)
+    return epoch, indexes
+
+epoch, indexes = _get_prns_rows(dat)
+
+def split_prns(item):
+    
+    return [item[num - 3: num] for num in 
+            range(3, len(item[2:]) + 3, 3)]
+
+prns_infos = []
+datetime_infos = []
+
+for i in range(0, len(epoch) - 1, 2):
+    
+
+    res = (epoch[i] + epoch[i + 1]).split("  ")
+    
+    prns_infos.append(split_prns(res[-1][4:].strip()))
+    datetime_infos.append(res[:-1])
+
+prns_infos.append(epoch[-1])
+datetime_infos.append(epoch[-1])
+
+epoch = len(prns_infos)
+
+#satellites = int(epoch[:2])
+
+#item = epoch[2:]
+
+
+print(epoch)
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
