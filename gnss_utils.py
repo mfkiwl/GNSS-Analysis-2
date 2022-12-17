@@ -50,7 +50,9 @@ def tec_fname(filename: str) -> datetime.datetime:
     time = args[-1].replace('.txt', '')
     time = time[:2] + ':' + time[2:]
     
-    return datetime.datetime.strptime(date + ' ' + time, "%Y-%m-%d %H:%M")
+    return datetime.datetime.strptime(date + ' ' + time, 
+                                      "%Y-%m-%d %H:%M")
+
 
 def replace_values(list_to_replace: list, 
                    item_to_replace: str = "", 
@@ -67,8 +69,9 @@ def remove_values(list_to_remove: list,
 
 
 
-def find(s: str, ch: str) -> int:
-    return [i for i, ltr in enumerate(s) if ltr == ch]
+def find(string: str, char: str) -> int:
+    """Find index in string"""
+    return [i for i, ltr in enumerate(string) if ltr == char]
 
 
 
@@ -87,7 +90,10 @@ def get_interval(stringText: T.Text,
     
     """Get section from string text"""
     start = stringText.find(start)
-    end = stringText.find(end)
+    try:    
+        end = stringText.find(end)
+    except:
+        end = None
         
     return stringText[start: end].split('\n')[snum: enum]
 
