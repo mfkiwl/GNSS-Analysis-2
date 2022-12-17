@@ -1,8 +1,9 @@
 import pandas as pd
-from datetime import datetime, timedelta
-from gnss_utils import remove_values, get_interval, replace_values
+from datetime import datetime
+from gnss_utils import remove_values, get_interval, sep_elements
 import typing as T
 
+import numpy as np
 
 
 remove_in_rinex2 = ["Type", "#", 
@@ -94,213 +95,184 @@ class header(object):
             return result
         else:
             return result[arg] 
-        
+            
 
-
-
-class rinex(object):
-    
-    def __init__(self, infile):
-        
-        self.lines = open(infile, "r").readlines()
-
-        self.attrs = header(infile).get()
-        
-   
-    
-    @property
-    def _time_interval(self):
-
-        first_obs = self.attrs['TimeOfFirstObs']
-        interval = self.attrs["Interval"][0][:2]
-        
-        year = int(first_obs[0])
-        month = int(first_obs[1])
-        day = int(first_obs[2])
-        
-        hour = int(first_obs[3])
-        minute = int(first_obs[4])
-        sec = int(float(first_obs[5]))
-        
-        
-        start = datetime(year, month, day, 
-                        hour, minute, sec)
-
-        end = start + timedelta(hours = 23, 
-                                minutes = 59, 
-                                seconds = 45)
-
-        return pd.date_range(start, end, freq = f"{interval}s")
-    
-    @staticmethod
-    def _get_data_for_each_epoch(elem, prns, time):
-        
-        columns = []
-        
-        for j in range(len(elem)):
-                
-            elemlist = elem[j].lstrip().replace("\n", "")
-            
-            L1 = elemlist[0:13].strip()
-            
-            L1lli = elemlist[13:14].strip()
-           
-            C1 = elemlist[17:29].strip()
-            
-            L2 = elemlist[32:45].strip()
-            
-            L2lli = elemlist[45:46].strip()
-            
-            P2 = elemlist[47:61].strip()
-            
-            obs = replace_values([L1, L1lli, C1, L2, L2lli, P2])
-            
-            out = [time, prns[j]] + list(map(float, obs))
-            
-            #L1ssi = elemlist[14:15].strip()
-            #L2ssi = elemlist[61:62].strip()
-            #P2ssi = elemlist[62:63].strip()
-            #C1ssi = elemlist[30:31].strip()
-            columns.append(out)    
-            
-        return columns
-    
-    @property
-    def _get_epochs(self):
-        
-        def _get_prns_rows(lines):
-            
-            epoch = []
-            indexes = []
-            
-            for i in range(15, len(lines)):
-                
-                current = lines[i]
-                            
-                if any([i in current 
-                        for i in ["G", "R", "E"]]):
-                    epoch.append(current.strip())
-                    indexes.append(i)
-            return epoch, indexes
-        
-        epoch, indexes = _get_prns_rows(self.lines)
-        
-        epoch_fix = []
-        indexes_fix = []
-        
-        for i in range(0, len(epoch) - 1, 2):
-            
-            res = (epoch[i] + epoch[i + 1]).split("  ")
-            
-            epoch_fix.append(res[-1][2:])
-            indexes_fix.append(indexes[i])
-        
-        return self._split_prns(epoch_fix), indexes_fix
-        
-    @property
-    def _get_rows_for_each_time(self):
-            
-        epoch, indexes = self._get_epochs
-        times =  self._time_interval
-        
-        result = []
-      
-        for num in range(0, len(indexes)):
-            
-            prns_list = epoch[num]
-            time = times[num]
-            
-            if num == len(indexes) - 2:
-                start = indexes[-2] + 2
-                end = indexes[-1]
-            elif num == len(indexes) - 1:
-                start = indexes[-1] + 2
-                end = None
-            else:
-                start = indexes[num] + 2
-                end = indexes[num + 1]
-                
-            
-            elem = self.lines[start: end]
-            
-            
-            result.extend(self._get_data_for_each_epoch(elem, 
-                                                   prns_list, 
-                                                   time))
-        return result
-        
-    def load(self):
-        cols = ["time", "prn", "L1", "L1lli", "C1", 
-                "L2", "L2lli", "P2"]
-        result =  self._get_rows_for_each_time
-        
-        df = pd.DataFrame(result, columns = cols)
-        
-        df.index = df["time"]
-        del df["time"]
-        return df
-    
-    
-infile = "database/rinex/2014/alar0011.14o"
-
-lines = open(infile, "r").read()
-
-dat = get_interval(lines, "END OF HEADER", None)
-
-
-def _get_prns_rows(lines):
-    
-    epoch = []
-    indexes = []
-    
-    for i in range(15, len(lines)):
-        
-        current = lines[i]
-                    
-        if any([i in current 
-                for i in ["G", "R"]]):
-            epoch.append(current.strip())
-            indexes.append(i)
-    return epoch, indexes
-
-epoch, indexes = _get_prns_rows(dat)
 
 def split_prns(item):
     
     return [item[num - 3: num] for num in 
             range(3, len(item[2:]) + 3, 3)]
 
-prns_infos = []
-datetime_infos = []
-
-for i in range(0, len(epoch) - 1, 2):
+def get_prns_rows(dat):
+    
+    """
+    Get rows which have prns and datetime information
+    """
+    
+    epoch = []
+    indexes = []
+    datetime_infos = []
     
 
-    res = (epoch[i] + epoch[i + 1]).split("  ")
-    
-    prns_infos.append(split_prns(res[-1][4:].strip()))
-    datetime_infos.append(res[:-1])
+    for i in range(len(dat) - 1):
+        
+        first = dat[i]
+        second = dat[i + 1]
+        
+        if (any([i in first for i in ["G", "R", "E"]]) and 
+            (any([i in second for i in ["G", "R", "E"]]))):
+            
+            current = (first + second.strip()).split("  ")
+            epoch.append(split_prns(current[-1][4:].strip()))
+            datetime_infos.append(" ".join(current[:-1]).strip())
+            indexes.append(i + 2)
+            
+    return epoch, indexes, datetime_infos
 
-prns_infos.append(epoch[-1])
-datetime_infos.append(epoch[-1])
-
-epoch = len(prns_infos)
-
-#satellites = int(epoch[:2])
-
-#item = epoch[2:]
 
 
-print(epoch)
 
     
+def sep_elements2(elem, length = 16):
+    out = []
+    for num in range(0, 63, length):
+        item = elem[num: num + length].strip()
+        if item == "":
+            out.append(np.nan)
+        else:
+            out.append(item)
+    return out
+
+
+
+
+def get_parameters(item):
     
+    """
+    Separe string into observables values, 
+    lost lock indicators (lli) and
+    strength signal indicators (ssi) 
+    """
     
+
+    obs_vals = []
+    ssi_vals = []
+    lli_vals = []
     
+    for i in range(len(item)):
+        
+        if item[i] != item[i]:
+            obs_vals.append(np.nan)
+            ssi_vals.append(np.nan)
+            lli_vals.append(np.nan)
+        else:
+            obs = item[i][:-2]
+            ssi = item[i][-1:].strip()
+            lli = item[i][-2:-1].strip()
+            
+            if lli == "": lli = np.nan
+            if ssi == "": ssi = np.nan
+            
+            obs_vals.append(float(obs))
+            ssi_vals.append(float(ssi))
+            lli_vals.append(float(lli))
+        
+    return lli_vals, ssi_vals, obs_vals
+
+
+def get_epochs(element: list, 
+               prns: list, 
+               time: str):
+    res = []
+    for i in range(len(element)):
+        join = [time.strip(), prns[i]]
+        join.extend(sep_elements2(element[i]))
+        res.append(join)
     
+    return res
+
+def get_datetime(time):
+    t = time.split(" ")
+    return datetime(int("20" +  t[0]), 
+                   int(t[1]), 
+                   int(t[2]), 
+                   int(t[3]), 
+                   int(t[4]), 
+                   int(float(t[5])))
+
+
     
+        
+    #return pd.DataFrame(res)
+
+
+
+class rinex:
     
+    def __init__(self, infile):
+        
+        lines = open(infile, "r").read()
     
+        dat = get_interval(lines, "END OF HEADER", None)
+        
+        epoch, indexes, datetime_infos = get_prns_rows(dat)
+
+        self.res_lli = []
+        self.res_ssi = []
+        self.res_vals = []
+        for num in range(len(indexes) - 1):
+            
+            id1 = indexes[num]
+            id2 = indexes[num + 1] - 2
+            
+            item = dat[id1: id2]
+            
+            time = datetime_infos[num]
+            
+            prns = epoch[num]
+            
+           
+            for i in range(len(item)):
+                
+                lli, ssi, vals = get_parameters(sep_elements2(item[i]))
+                
+                self.res_vals.append([get_datetime(time), prns[i]] + vals)
+                self.res_lli.append([get_datetime(time), prns[i]] + lli)
+                self.res_ssi.append([get_datetime(time), prns[i]] + ssi)
+        
+        last = dat[indexes[-1]:]
+        for i in range(len(item)):
+            lli, ssi, vals = get_parameters(sep_elements2(last[i]))
+           
+            self.res_vals.append([get_datetime(datetime_infos[-1]), 
+                             prns[-1]] + vals)
+            self.res_lli.append([get_datetime(datetime_infos[-1]), 
+                            prns[-1]] + lli)
+            self.res_ssi.append([get_datetime(datetime_infos[-1]), 
+                            prns[-1]] + ssi)
+    @property
+    def lli(self):
+        columns = ["time", "prn", "L1lli", "", "L2lli", ""]
+        return pd.DataFrame(self.res_lli, columns = columns)
     
+    @property
+    def ssi(self):
+        columns = ["time", "prn", "L1ssi", "C1ssi", "L2ssi", "P2ssi"]
+        return pd.DataFrame(self.res_ssi, columns = columns)
     
-    
+    @property
+    def obs(self):
+        columns = ["time", "prn", "L1", "C1", "L2", "P2"]
+        return pd.DataFrame(self.res_vals, columns = columns)
+
+infile = "database/rinex/2014/alar0011.14o"
+
+
+df = rinex(infile).obs
+
+#%%
+
+df1 = df.loc[df["prn"] == "R04", "P2"]
+df1.plot()
+
+
