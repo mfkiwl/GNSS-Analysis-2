@@ -253,26 +253,41 @@ class rinex:
     @property
     def lli(self):
         columns = ["time", "prn", "L1lli", "", "L2lli", ""]
-        return pd.DataFrame(self.res_lli, columns = columns)
+        df = pd.DataFrame(self.res_lli, columns = columns)
+        df.index = df.time
+        del df["time"], df[""]
+        for col in ["L1lli", "L2lli"]:
+            df.replace({col: {np.nan: 0}}, inplace = True)
+        return df 
     
     @property
     def ssi(self):
         columns = ["time", "prn", "L1ssi", "C1ssi", "L2ssi", "P2ssi"]
-        return pd.DataFrame(self.res_ssi, columns = columns)
+        df =  pd.DataFrame(self.res_ssi, columns = columns)
+        df.index = df.time
+        del df["time"]
+        return df
     
     @property
     def obs(self):
         columns = ["time", "prn", "L1", "C1", "L2", "P2"]
-        return pd.DataFrame(self.res_vals, columns = columns)
+        df = pd.DataFrame(self.res_vals, columns = columns)
+        df.index = df.time
+        del df["time"]
+        df = df.dropna(subset = columns[2:])
+        return df
 
-infile = "database/rinex/2014/alar0011.14o"
 
+def main():
+    infile = "database/rinex/2014/alar0011.14o"
+    
+    
+    df = rinex(infile).lli
 
-df = rinex(infile).obs
-
-#%%
-
-df1 = df.loc[df["prn"] == "R04", "P2"]
-df1.plot()
+    
+    #df1 = df.loc[df["prn"] == "R04", "P2"]
+    print(df)
+    
+main()
 
 
