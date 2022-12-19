@@ -200,13 +200,6 @@ def get_datetime(time):
                    int(t[4]), 
                    int(float(t[5])))
 
-
-    
-        
-    #return pd.DataFrame(res)
-
-
-
 class rinex:
     
     def __init__(self, infile):
@@ -250,6 +243,8 @@ class rinex:
                             prns[-1]] + lli)
             self.res_ssi.append([get_datetime(datetime_infos[-1]), 
                             prns[-1]] + ssi)
+            
+   
     @property
     def lli(self):
         columns = ["time", "prn", "L1lli", "", "L2lli", ""]
@@ -259,6 +254,10 @@ class rinex:
         for col in ["L1lli", "L2lli"]:
             df.replace({col: {np.nan: 0}}, inplace = True)
         return df 
+    
+    @property
+    def prns(self):
+        return np.unique(self.lli.prn.values)
     
     @property
     def ssi(self):
@@ -282,12 +281,8 @@ def main():
     infile = "database/rinex/2014/alar0011.14o"
     
     
-    df = rinex(infile).lli
+    df = rinex(infile).prns
 
-    
-    #df1 = df.loc[df["prn"] == "R04", "P2"]
-    print(df)
-    
-main()
+ 
 
 
