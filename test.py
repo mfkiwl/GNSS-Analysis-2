@@ -1,6 +1,7 @@
 from gnss_utils import fname_attrs
 import georinex as gr
 from read_rinex import rinex
+from load import load_receiver
 
 def test_filenames(filenames: list):
     
@@ -18,21 +19,15 @@ def test_filenames(filenames: list):
 def test_compare_georinex(infile, prn = "R01"):
     infile = "database/rinex/2014/alar0011.14o"
     
-    obs = gr.load(infile, useindicators = True)
-    
+    df1 = load_receiver(infile).df
     df = rinex(infile).obs
     
-    df1 = obs.sel(sv =  prn).to_dataframe()
+    prn = "R01"
+    df1 = df1.loc[df1.index.get_level_values("sv") == prn]
     df = df.loc[df["prn"] == prn]
     
-    #df.index = df.time
-    
-    readRinex = df["L1"].dropna()
-    geoRinex = df1["L1"].dropna()
-    
-    print(readRinex, geoRinex)
-    #assert readRinex == geoRinex, "Are equals" 
-    
-#infile = "database/rinex/2014/alar0011.14o"
+    mine = df["L1"].dropna().values
+    geo = df1["L1"].dropna().values
 
-#test_compare_georinex(infile, prn = "R01")
+    assert all(mine == geo), "No equals" 
+    
