@@ -15,17 +15,24 @@ def test_filenames(filenames: list):
             
 
 
+def test_compare_georinex(infile, prn = "R01"):
+    infile = "database/rinex/2014/alar0011.14o"
+    
+    obs = gr.load(infile, useindicators = True)
+    
+    df = rinex(infile).obs
+    
+    df1 = obs.sel(sv =  prn).to_dataframe()
+    df = df.loc[df["prn"] == prn]
+    
+    #df.index = df.time
+    
+    readRinex = df["L1"].dropna()
+    geoRinex = df1["L1"].dropna()
+    
+    print(readRinex, geoRinex)
+    #assert readRinex == geoRinex, "Are equals" 
+    
+#infile = "database/rinex/2014/alar0011.14o"
 
-infile = "database/rinex/2014/alar0011.14o"
-
-df = rinex(infile).load()
-
-obs = gr.load(infile, useindicators = True)
-
-print(df)
-
-#%%
-prn = "G02"
-df1 = obs.sel(sv =  prn).to_dataframe()
-
-print(obs)
+#test_compare_georinex(infile, prn = "R01")
