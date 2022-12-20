@@ -1,5 +1,4 @@
 from gnss_utils import fname_attrs
-import georinex as gr
 from read_rinex import rinex
 from load import load_receiver
 
