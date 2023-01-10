@@ -1,6 +1,6 @@
 import pandas as pd
 from datetime import datetime
-from gnss_utils import remove_values, get_interval, sep_elements
+from gnss_utils import remove_values, get_interval
 import typing as T
 
 import numpy as np
@@ -46,7 +46,7 @@ class header(object):
         self.lines = open(infile, "r").read()
     
     @staticmethod
-    def remove_keys(dat: dict):
+    def remove_keys(dat: dict) -> dict:
 
         if dat['RinexVersion'][0] == "2":
             remove_list = remove_in_rinex2 
@@ -97,192 +97,184 @@ class header(object):
             return result[arg] 
             
 
+def floatornan(x):
+    if x == '' or x[-1] == ' ':
+        return np.NaN
+    else:
+        return float(x)
+
+def digitorzero(x):
+    if x == ' ' or x == '':
+        return 0
+    else:
+        return int(x)
 
 def split_prns(item):
     
     return [item[num - 3: num] for num in 
             range(3, len(item[2:]) + 3, 3)]
 
-def get_prns_rows(dat):
-    
-    """
-    Get rows which have prns and datetime information
-    """
-    
-    epoch = []
-    indexes = []
-    datetime_infos = []
-    
-
-    for i in range(len(dat) - 1):
         
-        first = dat[i]
-        second = dat[i + 1]
+def get_datetime(string_time):
+    t = remove_values(string_time.split(" "))
+    return datetime(int("20" +  t[0]), 
+                   int(t[1]), 
+                   int(t[2]), 
+                   int(t[3]), 
+                   int(t[4]), 
+                   int(float(t[5])), 
+                   int(t[6]))
+ 
+def chunk_epochs(sats):  
+    
+    prns_list = []
+    count_prn = []
+    time_list = []  
+    
+    for i in range(len(sats) - 1):
+        first = sats[i]
+        secon = sats[i + 1]
         
-        if (any([i in first for i in ["G", "R", "E"]]) and 
-            (any([i in second for i in ["G", "R", "E"]]))):
+        if len(first) > 62:
+            epoch = "".join([first, secon])
+            num_sats = int(epoch[29:][:2].strip())
             
-            current = (first + second.strip()).split("  ")
-            epoch.append(split_prns(current[-1][4:].strip()))
-            datetime_infos.append(" ".join(current[:-1]).strip())
-            indexes.append(i + 2)
+            _prns = split_prns(epoch[29:][2:])
             
-    return epoch, indexes, datetime_infos
-
-
-
-
+            if len(_prns) != num_sats:
+                raise "Something it wrong with the prns"
+            else:
+                prns_list.extend(_prns)
+                count_prn.append(num_sats)
+            time_list.extend([get_datetime(epoch[:29])] 
+                             * num_sats)
+    time_list = np.array(time_list, 
+                          dtype = 'datetime64[us]')
     
-def sep_elements2(elem, length = 16):
-    out = []
-    for num in range(0, 63, length):
-        item = elem[num: num + length].strip()
-        if item == "":
-            out.append(np.nan)
-        else:
-            out.append(item)
-    return out
-
-
-
-
-def get_parameters(item):
     
+    return prns_list, time_list, count_prn
+
+
+def get_obs(prns_list, obs_epoch):
+    
+     
     """
     Separe string into observables values, 
     lost lock indicators (lli) and
     strength signal indicators (ssi) 
     """
     
-
-    obs_vals = []
-    ssi_vals = []
-    lli_vals = []
+    total_sats = len(prns_list)
+    obs_types = 4
     
-    for i in range(len(item)):
+    obs = np.empty((total_sats, obs_types), 
+                   dtype = np.float64) * np.NaN
+    
+    lli = np.zeros((total_sats, obs_types), 
+                   dtype = np.uint8)
+    
+    ssi = np.zeros((total_sats, obs_types), 
+                               dtype = np.uint8)
+    
+    for i in range(total_sats):
         
-        if item[i] != item[i]:
-            obs_vals.append(np.nan)
-            ssi_vals.append(np.nan)
-            lli_vals.append(np.nan)
+        obs_line = obs_epoch[i]
+    
+        for j in range(obs_types):
+            obs_record = obs_line[16 * j: 16*(j + 1)]  
+                
+            obs[i, j] = floatornan(obs_record[0:14])
+            lli[i, j] = digitorzero(obs_record[14:15])
+            ssi[i, j] = digitorzero(obs_record[15:16])
+            
+    return obs, lli, ssi
+
+
+def get_epochs(dataSection):
+       
+    obs_epoch = []
+    sat_epoch = []
+    
+    for elem in dataSection:
+                
+        if any([i in elem.strip() 
+                for i in ["G", "R", "E"]]):
+            sat_epoch.append(elem.strip())
         else:
-            obs = item[i][:-2]
-            ssi = item[i][-1:].strip()
-            lli = item[i][-2:-1].strip()
+            obs_epoch.append(elem)
             
-            if lli == "": lli = np.nan
-            if ssi == "": ssi = np.nan
-            
-            obs_vals.append(float(obs))
-            ssi_vals.append(float(ssi))
-            lli_vals.append(float(lli))
-        
-    return lli_vals, ssi_vals, obs_vals
+    return obs_epoch, sat_epoch
 
 
-def get_epochs(element: list, 
-               prns: list, 
-               time: str):
-    res = []
-    for i in range(len(element)):
-        join = [time.strip(), prns[i]]
-        join.extend(sep_elements2(element[i]))
-        res.append(join)
-    
-    return res
-
-def get_datetime(time):
-    t = time.split(" ")
-    return datetime(int("20" +  t[0]), 
-                   int(t[1]), 
-                   int(t[2]), 
-                   int(t[3]), 
-                   int(t[4]), 
-                   int(float(t[5])))
-
-class rinex:
+class RINEX2:
     
     def __init__(self, infile):
         
-        lines = open(infile, "r").read()
-    
-        dat = get_interval(lines, "END OF HEADER", None)
-        
-        epoch, indexes, datetime_infos = get_prns_rows(dat)
+        stringText = open(infile, "r").read()
 
-        self.res_lli = []
-        self.res_ssi = []
-        self.res_vals = []
-        for num in range(len(indexes) - 1):
-            
-            id1 = indexes[num]
-            id2 = indexes[num + 1] - 2
-            
-            item = dat[id1: id2]
-            
-            time = datetime_infos[num]
-            
-            prns = epoch[num]
-            
-           
-            for i in range(len(item)):
-                
-                lli, ssi, vals = get_parameters(sep_elements2(item[i]))
-                
-                self.res_vals.append([get_datetime(time), prns[i]] + vals)
-                self.res_lli.append([get_datetime(time), prns[i]] + lli)
-                self.res_ssi.append([get_datetime(time), prns[i]] + ssi)
+        start = stringText.find("END OF HEADER")
         
-        last = dat[indexes[-1]:]
-        for i in range(len(item)):
-            lli, ssi, vals = get_parameters(sep_elements2(last[i]))
-           
-            self.res_vals.append([get_datetime(datetime_infos[-1]), 
-                             prns[-1]] + vals)
-            self.res_lli.append([get_datetime(datetime_infos[-1]), 
-                            prns[-1]] + lli)
-            self.res_ssi.append([get_datetime(datetime_infos[-1]), 
-                            prns[-1]] + ssi)
+        dataSection = stringText[start: None].split("\n")[1:-1]
+        
+        obs_epoch, sat_epoch = get_epochs(dataSection)
+        self.prns_list, self.time_list, count_prn = chunk_epochs(sat_epoch)
             
-   
-    @property
-    def lli(self):
-        columns = ["time", "prn", "L1lli", "", "L2lli", ""]
-        df = pd.DataFrame(self.res_lli, columns = columns)
-        df.index = df.time
-        del df["time"], df[""]
-        for col in ["L1lli", "L2lli"]:
-            df.replace({col: {np.nan: 0}}, inplace = True)
-        return df 
-    
-    @property
-    def prns(self):
-        return np.unique(self.lli.prn.values)
-    
-    @property
-    def ssi(self):
-        columns = ["time", "prn", "L1ssi", "C1ssi", "L2ssi", "P2ssi"]
-        df =  pd.DataFrame(self.res_ssi, columns = columns)
-        df.index = df.time
-        del df["time"]
+        self._obs, _lli, self._ssi = get_obs(self.prns_list, obs_epoch)
+        
+        self._lli = np.delete(_lli, slice(1, 3), axis = 1)
+        
+        self.dat = np.concatenate([self._obs, 
+                                   self._lli], axis = 1)
+        
+        
+    def data(self, data, columns):
+        
+        arrays = [self.time_list, self.prns_list]
+
+        tuples = list(zip(*arrays))
+
+        index = pd.MultiIndex.from_tuples(tuples, 
+                                          names = ["time", "prn"]) 
+        
+        df = pd.DataFrame(data, 
+                          columns = columns, 
+                          index = index)
+        df = df.dropna(subset = ["L1", "C1", "L2", "P2"])
         return df
     
     @property
     def obs(self):
-        columns = ["time", "prn", "L1", "C1", "L2", "P2"]
-        df = pd.DataFrame(self.res_vals, columns = columns)
-        df.index = df.time
-        del df["time"]
-        df = df.dropna(subset = columns[2:])
-        return df
+        columns  = ["L1", "C1", "L2", "P2"]
+        return self.data(self._obs, columns)
+    
+    @property
+    def lli(self):
+        columns  = ["L1", "L2"]
+        return self.data(self._lli, columns)
+    
+    @property
+    def ssi(self):
+        columns  = ["L1", "C1", "L2", "P2"]
+        return self.data(self._ssi, columns)
+    
+    @property
+    def All(self):
+        columns  = ["L1", "C1", "L2", 
+                    "P2", "L1lli", "L2lli"]
+        return self.data(self.dat, columns)
+   
 
 
 def main():
     infile = "database/rinex/2014/alar0011.14o"
     
     
-    df = rinex(infile).prns
+    df = RINEX2(infile).All
+    
 
- 
-
-
+    prn = "G01"
+    df = df.loc[df.index.get_level_values("prn") == prn]
+    
+    df["L1lli"].plot()
+    
+    print(df)
