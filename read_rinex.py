@@ -257,24 +257,30 @@ class RINEX2:
         columns  = ["L1", "C1", "L2", "P2"]
         return self.data(self._ssi, columns)
     
-    @property
-    def All(self):
+         
+    def sel(self, prn):
+        
         columns  = ["L1", "C1", "L2", 
                     "P2", "L1lli", "L2lli"]
-        return self.data(self.dat, columns)
-   
+        df = self.data(self.dat, columns)
+        df = df.loc[df.index.get_level_values("prn") == prn]
+        
+        df.index = pd.to_datetime(df.index.get_level_values("time"))
+        
+        df.columns.name = prn
+        return df
 
 
 def main():
     infile = "database/rinex/2014/alar0011.14o"
     
-    
-    df = RINEX2(infile).All
-    
-
     prn = "G01"
-    df = df.loc[df.index.get_level_values("prn") == prn]
-    
-    df["L1lli"].plot()
+    df = RINEX2(infile).sel(prn)
     
     print(df)
+    
+    
+    
+    print(df)
+
+main()
