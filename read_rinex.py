@@ -2,7 +2,6 @@ import pandas as pd
 from datetime import datetime
 from gnss_utils import remove_values, get_interval
 import typing as T
-
 import numpy as np
 
 
@@ -99,7 +98,7 @@ class header(object):
 
 def floatornan(x):
     if x == '' or x[-1] == ' ':
-        return np.NaN
+        return np.nan
     else:
         return float(x)
 
@@ -208,7 +207,7 @@ def get_epochs(dataSection):
 
 class RINEX2:
     
-    def __init__(self, infile):
+    def __init__(self, infile: T.TextIO):
         
         stringText = open(infile, "r").read()
 
@@ -217,10 +216,12 @@ class RINEX2:
         dataSection = stringText[start: None].split("\n")[1:-1]
         
         obs_epoch, sat_epoch = get_epochs(dataSection)
+        
         self.prns_list, self.time_list, count_prn = chunk_epochs(sat_epoch)
             
         self._obs, _lli, self._ssi = get_obs(self.prns_list, obs_epoch)
         
+        # Remove "loss lock indicator" for C1 and P2 
         self._lli = np.delete(_lli, slice(1, 3), axis = 1)
         
         self.dat = np.concatenate([self._obs, 
@@ -259,7 +260,7 @@ class RINEX2:
     
          
     def sel(self, prn):
-        
+        """Select obsevables and lli for phases"""
         columns  = ["L1", "C1", "L2", 
                     "P2", "L1lli", "L2lli"]
         df = self.data(self.dat, columns)
@@ -279,8 +280,3 @@ def main():
     
     print(df)
     
-    
-    
-    print(df)
-
-main()
