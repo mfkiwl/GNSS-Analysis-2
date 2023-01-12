@@ -4,12 +4,10 @@ class constants(object):
     
     """Contants used in the GNSS routines"""
     
-    
     # Basic constants
     c = 299792458.0
     TECU = 1.0e16 
     A = 40.3  
-        
 
     # Geodesic constants
     alt_bottom = 6620.0
@@ -18,7 +16,7 @@ class constants(object):
     radius_earth = 6371.0  
     avg_heigth = 250.0 
         
-    dtor = 0.0174533
+    dtor = 0.0174533 #converte para radianos
         
     @staticmethod
     def frequency(prn):
@@ -28,6 +26,7 @@ class constants(object):
             
             F1 = 1575.42e6 
             F2 = 1227.60e6
+            F5 = 1176.45e6
             
         elif prn[0] == "R":
             
@@ -46,26 +45,7 @@ class constants(object):
             
         return F1, F2
     
-    @staticmethod
-    def factor(prn):
-        const = constants()
-        F1, F2 = const.frequency(prn)
-        return (F1 - F2) / (F1 + F2) / const.c
+   
     
-    @staticmethod
-    def factor_mw(prn):
-        const = constants()
-        F1, F2 = const.frequency(prn)
-        return (F1 * F2) / (F2 - F1) / const.c
-    
-    @staticmethod
-    def factor_TEC(prn):
-        const = constants()
-        F1, F2 = const.frequency(prn)
-        return ((F1 * F2) ** 2) / (F1 + F2) / (F1 - F2) / const.A / const.TECU
-    
-    
-    
-        
-        
+
         
