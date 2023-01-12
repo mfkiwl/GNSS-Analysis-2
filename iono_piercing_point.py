@@ -58,7 +58,8 @@ class IonosphericPiercingPoint(object):
     
     def positions(self, height = "top"):
         
-        """Positions of ionospheric piercing point for differents altitudes"""
+        """Positions of ionospheric piercing point for 
+        differents altitudes"""
 
         if height == "top":
             h = const.alt_top
@@ -70,10 +71,10 @@ class IonosphericPiercingPoint(object):
         arg_3 = pow(self.dxdy, 2) + pow(self.dxdz, 2) - pow(self.dx, 2) * pow(h, 2)
         arg_4 = pow(self.dy, 2) + pow(self.dz, 2) + pow(self.dx, 2)
 
-        fator = np.sqrt(arg_1 - arg_2 * arg_3)
+        factor = np.sqrt(arg_1 - arg_2 * arg_3)
 
         sub_ion_x = (-1 * (self.dy * self.dxdy + 
-                           self.dz * self.dxdz) - fator) / arg_4
+                           self.dz * self.dxdz) - factor) / arg_4
         
         sub_ion_y = (self.dy * sub_ion_x + self.dxdy) / self.dx
         sub_ion_z = (self.dz * sub_ion_x + self.dxdz) / self.dx
@@ -84,8 +85,8 @@ class IonosphericPiercingPoint(object):
     def relative_directions(self, lat, lon):
         
         """
-        Relative directions in function of latitude and longitude of receiver
-        (in degrees)
+        Relative directions in function of latitude and 
+        longitude of receiver (in degrees)
         """
         
         meridional = (-np.cos(lon) * np.sin(lat) * self.dx - 
@@ -213,7 +214,7 @@ def piercing_points_data(path,
 
     for num in range(len(times)):
 
-        sx, sy, sz = df.x.values[num], df.y.values[num], df.z.values[num]
+        sx, sy, sz = sat_x_vals[num], sat_y_vals[num], sat_z_vals[num]
         
         time = times[num]
         
