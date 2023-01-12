@@ -108,13 +108,14 @@ def digitorzero(x):
     else:
         return int(x)
 
-def split_prns(item):
-    
+def split_prns(item: str) -> list:
+    """Split PRNs string sequence into list"""
     return [item[num - 3: num] for num in 
             range(3, len(item[2:]) + 3, 3)]
 
         
-def get_datetime(string_time):
+def get_datetime(string_time: str) -> datetime:
+    """Convert datetime location into datetime"""
     t = remove_values(string_time.split(" "))
     return datetime(int("20" +  t[0]), 
                    int(t[1]), 
@@ -147,6 +148,7 @@ def chunk_epochs(sats):
                 count_prn.append(num_sats)
             time_list.extend([get_datetime(epoch[:29])] 
                              * num_sats)
+            
     time_list = np.array(time_list, 
                           dtype = 'datetime64[us]')
     

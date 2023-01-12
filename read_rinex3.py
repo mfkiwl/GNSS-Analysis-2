@@ -175,7 +175,8 @@ class rinex3(object):
     @property
     def _get_obs_types(self):
            
-        dat =  get_interval(self.lines, "ANT # / TYPE",  "# OF SATELLITES")
+        dat =  get_interval(self.lines, "ANT # / TYPE",  
+                            "# OF SATELLITES")
         
         sys_obstype = {}
         for i in range(len(dat)):
@@ -314,4 +315,4 @@ def main():
     #plt.plot(df1["time"], df1["L8X"])        
 
 
-main()
+#main()
