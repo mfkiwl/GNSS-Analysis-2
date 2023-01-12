@@ -150,7 +150,7 @@ def compute_for_prns(year: int = 2014,
     
     df = pd.concat(out)
     
-    df.to_csv("database/examples/ceft.txt", 
+    df.to_csv(f"database/examples/{station}.txt", 
               sep = ",", 
               index = True)
     
@@ -179,7 +179,7 @@ def main():
     start_time = time.time()
     compute_for_prns(year = 2014,  
                  doy = 1, 
-                 station =  "ceft")
+                 station = "ceft")
     print("--- %s hours ---" % ((time.time() - start_time) / 3600))
 
 
