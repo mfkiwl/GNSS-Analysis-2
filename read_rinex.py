@@ -3,7 +3,7 @@ from datetime import datetime
 from gnss_utils import remove_values, get_interval
 import typing as T
 import numpy as np
-
+from constants import constants as c
 
 remove_in_rinex2 = ["Type", "#", 
                     'Pgm',
@@ -273,6 +273,26 @@ class RINEX2:
         df.columns.name = prn
         return df
 
+
+class load_rinex:
+    
+    def __init__(self, infile, prn, start, end):
+        
+        obs = RINEX2(infile).sel(prn)
+        if start and end:
+            obs = obs.loc[(obs.index > start) & 
+                           (obs.index < end)]
+        
+        self.time = obs.index
+        self.l1 = obs.L1.values
+        self.l2 = obs.L2.values
+        self.c1 = obs.C1.values
+        self.p2 = obs.P2.values
+        
+        self.l1lli = obs.L1lli.values.astype(int)
+        self.l2lli = obs.L2lli.values.astype(int)
+        
+        self.F1, self.F2 = c.frequency(prn)
 
 def main():
     infile = "database/rinex/2014/alar0011.14o"
