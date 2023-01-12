@@ -1,151 +1,158 @@
-from constants import constants as const
-import datetime
+import read_rinex as r
+from constants import constants as c
+import matplotlib.pyplot as plt
 import numpy as np
-from load import observables
-import pandas as pd
-from build import paths
+from datetime import timedelta, datetime
 
 
-def correct_phases(RTEC, MWLC, 
-                   l1_values, l2_values, 
-                   c1_values, p2_values, 
-                   i, prn):
+
+def RTEC(l1, l2, f1, f2):
+    """Compute relative from phases"""
+    return ((l1 / f1) - (l2 /  f2)) * c.c
+
+def wl_wavelength(f1, f2):
+    """wide-lane wavelength. For GPS ~82cm"""
+    return c.c / (f1 - f2)
+
+def factor_nw(f1, f2):
+    return (f1 * f2) / (f2 - f1) / c.c
+
+def MWWL(l1, l2, c1, p2, f1, f2):
+    """Compute Melbourne–Wübbena linear combination"""
+    lambda_factor = wl_wavelength(f1, f2) * (f1 + f2)
+    return (l1 - l2) - (f1 * c1 + f2 * p2) / lambda_factor
+
+
+def correct(l1, l2, c1, p2, 
+            rtec, l, i, f1, f2):
     
-    F1, F2 = const.frequency(prn)
-      
-    l1 = l1_values[i]
-    l2 = l2_values[i]
-    c1 = c1_values[i]
-    p2 = p2_values[i]
-    
-    diff_tec = RTEC[i] - RTEC[i - 1]
-    diff_mwlc = MWLC[i] - MWLC[i - 1]
-    
-    diff_2 = np.round((diff_tec - (diff_mwlc * const.c / F1)) * const.factor_mw(prn))
-    
-    diff_1 = diff_2 + np.round(diff_mwlc)
-    
-    corr_1 = l1 - diff_1
-    corr_2 = l2 - diff_2
-    
-    RTEC[i] = ((corr_1 / F1) - (corr_2 / F2)) * const.c
-    MWLC[i] = ((corr_1 - corr_2) - (F1 * c1 + F2 * p2) * const.factor(prn))
-    
-    for num in range(i, len(l1_values)):
+    """Use the MW ambiguity for to correct the phases lost"""
         
-        l1_values[num] = l1_values[num] - diff_1
-        l2_values[num] = l2_values[num] - diff_2
-        
-    return l1_values, l2_values
-
-
-def cycle_slip_corrector(df, prn, DIFF_TEC_MAX = 0.05, size = 10) -> tuple:
+    diff_tec = rtec[i] - rtec[i - 1]
     
-    """Cycle slip correction for each prn"""
-    ob = observables(df, prn = prn)
-
-    # phases carriers (Fase das portadoras)
-    l1_values = ob.l1
-    l2_values = ob.l2
-
-    # Loss Lock Indicator
-    l1lli_values, l2lli_values = ob.l1lli, ob.l2lli
-
-    # Pseudoranges (pseudistancias)
-    c1_values, p2_values = ob.c1, ob.p2
-
-    # tempo
-    time = ob.time
-    
-    index_start = 0
-    
-    F1, F2 = const.frequency(prn)
-    
-    RTEC = np.zeros(len(time)) # TEC relativo
-    MWLC = np.zeros(len(time)) # Combinação linear Melbourne–Wübbena
-    
-    
-    for index in range(len(time)):
-        
-        l1 = l1_values[index]
-        l2 = l2_values[index]
-        c1 = c1_values[index]
-        p2 = p2_values[index]
-        
-        # Calcule o TEC relativo a partir das fases
-        RTEC[index] = ((l1 / F1) - (l2 /  F2)) * const.c
-        
-        # Compute the Melbourne-Wubbena
-        MWLC[index] = ((l1 - l2) - (F1 * c1 + F2 * p2) * const.factor(prn))
-        
-        # Se encontrar o gap de 15 minutos inicie o "index_start"
-        
-        if (time[index] - time[index - 1] > datetime.timedelta(minutes = 15)):
-            index_start = index
+    diff_mwlc = l[i] - l[i - 1]
             
-        # Encontre o resto das phase de bloqueio
-        l_slip1 = l1lli_values[index] % 2
-        l_slip2 = l2lli_values[index] % 2
+    diff_2 = (diff_tec - (diff_mwlc * c.c / f1)) * factor_nw(f1, f2)
+    
+    # Sem aplicar o 'round' a correção, aparentemente, apresenta um 
+    # comportamento melhor
+    diff_1 = diff_2 + diff_mwlc
+    
+    # correção das fases 1 e 2 na epoca em que o cycle splip ocorreu 
+    corr_1 = l1[i] - diff_1
+    corr_2 = l2[i] - diff_2
+    
+    # Correção do rtec no ponto de perda de fase
+    rtec[i] = RTEC(corr_1, corr_2, f1, f2) 
+    
+    # correção de todas epocas subsequentes
+    l1[i: len(l1)] -= diff_1
+    l2[i: len(l2)] -= diff_2
+    return l1, l2
+
+
+def deviations(i, 
+               i_start, 
+               rtec, 
+               diff_tec_max = 0.05, 
+               size = 10):
+               
+     if i - i_start + 1 >= 12:
         
+         add_tec = 0
+         add_tec_2 = 0
+        
+         for j in range(1, size):
+             add_tec += rtec[i - j] - rtec[i - 1 - j]
+             add_tec_2 += pow(rtec[i - j] -  rtec[i - 1 - j], 2)
+            
+         pmean = add_tec / size
+         chunk_pdev = np.sqrt(add_tec_2 / size - pow(pmean, 2))
+         pdev = max(chunk_pdev, diff_tec_max)
+     else:
+         pmean = 0
+         pdev = diff_tec_max * 2.5
+        
+     pmin_tec = pmean - pdev * 2
+     pmax_tec = pmean + pdev * 2
+    
+     return pmin_tec, pmax_tec
+ 
+    
+def CycleSlip(l1, l2, c1, p2, prn, 
+              time, l1lli, l2lli, 
+              f1, f2):
+    
+    tec = np.zeros(len(time)) # TEC relativo
+    nwl = np.zeros(len(time)) # Combinação linear Melbourne–Wübbena
+    
+    i_start = 0
+    
+    for i, epoch in enumerate(time):
+         
+        tec[i] = RTEC(l1[i], l2[i], f1, f2)
+        
+        nwl[i] = MWWL(l1[i], l2[i], c1[i], p2[i], f1, f2)
+        
+        # Verifique se o último bit do lli
+        l_slip1 = l1lli[i] % 2
+        l_slip2 = l2lli[i] % 2
+            
         # Verifique se o resto do lli é igual a 1
         if (l_slip1 == 1 or l_slip2 == 1):
-            
-            l1_values, l2_values = correct_phases(RTEC, MWLC, 
-                                                  l1_values, l2_values, 
-                                                  c1_values, p2_values, 
-                                                  index, prn)
-        pmean = 0.0
-        pdev = DIFF_TEC_MAX * 4.0
+    
+            l1, l2 = correct(l1, l2, c1, p2, 
+                             tec, nwl, i, f1, f2)
         
-        if index - index_start + 1 >= 12:
-            
-            add_tec = 0
-            add_tec_2 = 0
-            
-            for elem in range(1, size):
-                add_tec = add_tec + RTEC[index - elem] - RTEC[index - 1 - elem]
-                
-                add_tec_2 = add_tec_2 + np.power(RTEC[index - elem] -  
-                                            RTEC[index - 1 - elem], 2)
-                
-            pmean = add_tec / size
-            
-            pdev = max(np.sqrt(add_tec_2 / size - np.power(pmean, 2)), 
-                       DIFF_TEC_MAX)
-            
-        pmin_tec = pmean - pdev * 5.0
-        pmax_tec = pmean + pdev * 5.0
+        if (time[i] - time[i - 1]) > timedelta(minutes = 15):
+            i_start = i
+            continue
+ 
+        pmin, pmax = deviations(i, i_start, tec)
+    
+        diff_tec = tec[i] - tec[i - 1]
         
-        diff_tec = RTEC[index] - RTEC[index - 1]
-        
-        if not (pmin_tec <= diff_tec < pmax_tec):
+        if not (pmin <= diff_tec < pmax):
             
-            l1_values, l2_values = correct_phases(RTEC, MWLC, 
-                                                  l1_values, l2_values, 
-                                                  c1_values, p2_values, 
-                                                  index, prn)
-
+            l1, l2 = correct(l1, l2, c1, p2, 
+                             tec, nwl, i, prn)
+    return tec
             
-    return time, c1_values, p2_values, RTEC
 
-
+def plot(time, rtec):
+    
+    fig, ax = plt.subplots()
+    ax.plot(time, rtec, label = "RTEC corrigido")
+    ax.legend()
+    
+    ax.set(ylabel = "TEC relativo", xlabel = "tempo")
 
 def main():
     
-    station = "alar001"
-    year = 2014
-    doy = 1
-    
-    path = build_paths(year, doy).fn_process(station)
+    infile = "database/rinex/2014/alar0011.14o"
 
-    df = pd.read_csv(path, delim_whitespace = True, index_col = ["sv", "time"])
-        
-    prn = "R01"
+    prn = "G01"
+
+    start = datetime(2014, 1, 1, 11)
+    end = datetime(2014, 1, 1, 12)
+            
+    df = r.load_rinex(infile, prn, False, False)
+
+    time = df.time
+    l1 = df.l1
+    l2 = df.l2
+    c1 = df.c1
+    p2 = df.p2
+    f1 = df.F1
+    f2 = df.F2
+    l1lli = df.l1lli
+    l2lli = df.l2lli
     
-    time, c1, p2, rtec = cycle_slip_corrector(df, prn)
+    rtec = CycleSlip(l1, l2, c1, p2, prn, 
+                     time, l1lli, l2lli, 
+                     f1, f2)
     
-    import matplotlib.pyplot as plt
+    plot(time, rtec)
     
-    plt.plot(time, rtec)
     
-#main()
+
