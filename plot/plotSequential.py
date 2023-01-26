@@ -76,7 +76,7 @@ def main():
     df.index = pd.to_datetime(df.index)
     date = df.index[0].strftime("%d de %B de %Y")
     
-    fig, ax = plt.subplots(figsize = (40, 30), 
+    fig, ax = plt.subplots(figsize = (30, 20), 
                           nrows = 4,
                           ncols = 2, 
                           sharex = 'col')
@@ -94,6 +94,6 @@ def main():
                  y = 0.95)
     
     
-    #save(fig, filename = "sequential_parameters.png")
+    save(fig, filename = "sequential_parameters.png")
     
 main()

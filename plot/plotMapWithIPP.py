@@ -128,13 +128,9 @@ def choose_a_time(infile:str,
                   minute:int = 0, 
                   save:bool = False):
    
-
-
-    
     df = interval(load_roti(infile), 
                    hour = hour, 
                    minute = minute)
-    
     
     fig = plotMappingIPP(df, hour, minute)
     
