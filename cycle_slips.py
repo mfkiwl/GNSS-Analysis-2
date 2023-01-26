@@ -115,7 +115,7 @@ def CycleSlip(l1, l2, c1, p2, prn,
         if not (pmin <= diff_tec < pmax):
             
             l1, l2 = correct(l1, l2, c1, p2, 
-                             tec, nwl, i, prn)
+                             tec, nwl, i, f1, f2)
     return tec
             
 
@@ -132,9 +132,6 @@ def main():
     infile = "database/rinex/2014/alar0011.14o"
 
     prn = "G01"
-
-    start = datetime(2014, 1, 1, 11)
-    end = datetime(2014, 1, 1, 12)
             
     df = r.load_rinex(infile, prn, False, False)
 

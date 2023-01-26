@@ -17,13 +17,13 @@ def load_slant_tec(path: str,
     """Read processed STEC data"""
     
     tec_path = path.fn_process(station)
-    
     try:
+       
         tec = pd.read_csv(tec_path, 
                       delimiter = ",", 
                       index_col = "time")
     except:
-        
+       
         tec = pd.read_csv(tec_path, 
                       delimiter = ";", 
                       index_col = "time")

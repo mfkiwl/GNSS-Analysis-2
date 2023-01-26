@@ -199,7 +199,7 @@ def get_epochs(dataSection):
     for elem in dataSection:
                 
         if any([i in elem.strip() 
-                for i in ["G", "R", "E"]]):
+                for i in ["G", "R", "E", "C"]]):
             sat_epoch.append(elem.strip())
         else:
             obs_epoch.append(elem)
@@ -279,6 +279,7 @@ class load_rinex:
     def __init__(self, infile, prn, start, end):
         
         obs = RINEX2(infile).sel(prn)
+        
         if start and end:
             obs = obs.loc[(obs.index > start) & 
                            (obs.index < end)]
@@ -296,9 +297,11 @@ class load_rinex:
 
 def main():
     infile = "database/rinex/2014/alar0011.14o"
-    
+    infile = "database/rinex/2014/alar0011.14o"
     prn = "G01"
-    df = RINEX2(infile).sel(prn)
-    
+    df = load_rinex(infile, prn, False, False)
+    #df =  open(infile, "r").read()
     print(df)
+    
+main()
     

@@ -1,4 +1,13 @@
 import numpy as np
+from astropy import units as u
+from astropy import constants as c
+
+
+T1 = 10 * u.deg_C
+T2 = 10 * u.K
+
+print(c.g0 * T1)
+
 
 class constants(object):
     
